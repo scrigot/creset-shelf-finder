@@ -2,5 +2,11 @@
   "previewPort": 3000,
   "healthPath": "/",
   "startCommand": "docker compose -f docker-compose.base44.yml up -d",
-  "secrets": []
+  "secrets": [
+    {
+      "name": "OPENAI_API_KEY",
+      "description": "Optional. Enables model-written outreach emails from the prospect drawer (Create a key at https://platform.openai.com/api-keys). Without it, Draft outreach uses a built-in template.",
+      "requiredAtBoot": false
+    }
+  ]
 }

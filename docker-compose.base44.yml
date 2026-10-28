@@ -26,6 +26,10 @@ services:
     environment:
       - DATABASE_URL=postgresql+psycopg://crest:crest_dev_password@db:5432/crest
       - BASE44_PREVIEW_MODE
+    # Optional AI key for "Draft outreach"; without it the API writes a template draft.
+    env_file:
+      - path: /run/base44/app.env
+        required: false
     depends_on:
       db:
         condition: service_healthy
