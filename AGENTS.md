@@ -22,7 +22,7 @@ docker compose -f docker-compose.base44.yml up -d --build
 - Python deps live in the image (`backend/Dockerfile` copies only `requirements.txt`): adding a package means `up -d --build api`.
 - npm deps live in the `web-node-modules` volume and install on container start; adding a package needs a container restart, not a rebuild.
 - Vite accepts the preview host through `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS`, passed bare into `web`. Without it the proxied host is rejected with "Blocked request".
-- `Draft outreach` calls OpenAI when `OPENAI_API_KEY` is set (delivered from `/run/base44/app.env`, mounted as an optional `env_file`), and otherwise returns a template draft. Never hardcode a key; a template fallback is intentional so the button always works.
+- `Draft outreach` calls OpenAI when `OPENAI_API_KEY` is set (delivered from `/run/base44/app.env`, mounted as an optional `env_file`), and otherwise returns a template draft. Never hardcode a key; a template fallback is intentional so the button always works. The failure is silent, so an invalid or expired key looks exactly like having no key — when a draft reads generic, check the `activities` row it logged ("Outreach drafted (ai)…" vs "(template)…").
 - `BASE44_PREVIEW_MODE` is passed to both app services; nothing branches on it today.
 
 ## Verifying
