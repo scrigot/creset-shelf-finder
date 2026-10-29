@@ -1058,3 +1058,15 @@ textarea {
     padding: 20px 18px 48px;
   }
 }
+
+/* Street map stays below the prospect drawer and mobile navigation. */
+.street-map { height: clamp(360px, 65vh, 680px); width: 100%; border: 1px solid var(--line); border-radius: var(--r); z-index: 0; font-family: inherit; }
+.map-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.map-toolbar strong { display: block; font-size: 18px; }
+.map-toolbar span { display: block; color: var(--muted); font-size: 12px; margin-top: 5px; }
+.prospect-map-marker { background: transparent; border: 0; }
+.prospect-map-score { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px #0005; font-size: 12px; font-weight: 800; }
+.prospect-map-score.selected { outline: 3px solid #1a1a1a; outline-offset: 3px; }
+.prospect-map-marker:focus-visible { outline: 3px solid #1a1a1a; outline-offset: 4px; border-radius: 50%; }
+.street-map .leaflet-tooltip { font-family: inherit; white-space: normal; max-width: 240px; }
+@media (max-width: 600px) { .map-legend { flex-wrap: wrap; } .legend-bar { flex-basis: 70px; } .map-toolbar strong { font-size: 15px; } }

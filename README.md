@@ -58,3 +58,7 @@ Weights are normalised by their sum, so any slider combination re-ranks consiste
 - `BASE44_PREVIEW_MODE` is passed through to both services; nothing branches on it yet.
 - Vite receives the preview host via `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` (passed through by Compose) so dev assets and HMR work behind the proxy.
 - The backend waits for Postgres (`wait_for_db`) before creating tables.
+
+## Street map
+
+The Map tab uses Leaflet with OpenStreetMap street tiles (no API key). Zoom in to see mapped buildings. Prospect markers use existing coordinates, including unverified demo coordinates; the basemap does not validate business addresses. Tile loading needs internet access. For another tile provider, set `VITE_MAP_TILE_URL` and `VITE_MAP_ATTRIBUTION` before building the frontend. Keep provider attribution visible and follow its usage policy.
