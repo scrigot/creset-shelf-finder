@@ -1,7 +1,7 @@
 import pytest
 
 from app.db import SessionLocal
-from app.models import Contact, Prospect
+from app.models import Contact
 
 
 CANDIDATES = {
@@ -54,10 +54,10 @@ def _add_contact(prospect_id, **overrides):
     return contact
 
 
-def test_ranked_table_orders_by_score_and_includes_primary_contact(client, prospect):
-    with SessionLocal() as db:
-        db.add(Prospect(name="Second Gym", gym_type="crossfit", score=50))
-        db.commit()
+def test_table_exposes_the_primary_contact_and_leaves_others_empty(
+    client, prospect, prospect_factory
+):
+    prospect_factory(name="Second Gym", type="crossfit", address="1 Main St")
     _add_contact(prospect.id)
 
     response = client.get("/api/prospects")
@@ -65,7 +65,6 @@ def test_ranked_table_orders_by_score_and_includes_primary_contact(client, prosp
     assert response.status_code == 200
     rows = response.json()
     assert [row["name"] for row in rows] == ["Barbell Union", "Second Gym"]
-    assert [row["rank"] for row in rows] == [1, 2]
     assert rows[0]["primary_contact"]["name"] == "Marcus Reyes"
     assert rows[0]["primary_contact"]["email_status"] == "verified"
     assert rows[1]["primary_contact"] is None
@@ -161,7 +160,7 @@ def test_draft_outreach_addresses_the_primary_contact_by_first_name_and_role(
         email="dana@barbellunion.example",
     )
 
-    response = client.post(f"/api/prospects/{prospect.id}/outreach-draft")
+    response = client.post(f"/api/prospects/{prospect.id}/draft-outreach")
 
     assert response.status_code == 200
     draft = response.json()
@@ -173,7 +172,7 @@ def test_draft_outreach_addresses_the_primary_contact_by_first_name_and_role(
 
 
 def test_draft_outreach_without_a_contact_uses_the_gym_team(client, prospect):
-    response = client.post(f"/api/prospects/{prospect.id}/outreach-draft")
+    response = client.post(f"/api/prospects/{prospect.id}/draft-outreach")
 
     assert response.status_code == 200
     draft = response.json()
@@ -185,7 +184,27 @@ def test_draft_outreach_without_a_contact_uses_the_gym_team(client, prospect):
 def test_unknown_prospect_returns_404(client):
     assert client.get("/api/prospects/9999").status_code == 404
     assert client.post("/api/prospects/9999/find-contact").status_code == 404
-    assert client.post("/api/prospects/9999/outreach-draft").status_code == 404
+    assert client.post("/api/prospects/9999/draft-outreach").status_code == 404
+
+
+def test_pipeline_endpoints_survive_the_merge(client, prospect):
+    patched = client.patch(f"/api/prospects/{prospect.id}", json={"stage": "Meeting"})
+    assert patched.status_code == 200
+    body = patched.json()
+    assert body["stage"] == "Meeting"
+    assert any(activity["kind"] == "stage" for activity in body["activities"])
+
+    follow = client.post(
+        f"/api/prospects/{prospect.id}/follow-up",
+        json={"next_action": "Drop samples", "next_action_date": "2026-01-05", "note": ""},
+    )
+    assert follow.status_code == 200
+    assert follow.json()["next_action"] == "Drop samples"
+
+    saved = client.put("/api/settings", json={"weight_fit": 40})
+    assert saved.status_code == 200
+    assert saved.json()["weight_fit"] == 40
+    assert client.get("/api/settings").json()["weight_fit"] == 40
 
 
 def test_health(client):

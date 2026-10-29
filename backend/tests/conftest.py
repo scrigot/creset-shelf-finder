@@ -35,17 +35,42 @@ def client():
 
 
 @pytest.fixture
-def prospect():
-    with SessionLocal() as db:
-        item = Prospect(
-            name="Barbell Union",
-            gym_type="independent_strength",
-            address="1408 E 6th St, Austin, TX",
-            website="https://barbellunion.example",
-            instagram="@barbellunion",
-            score=94,
-        )
-        db.add(item)
-        db.commit()
-        db.refresh(item)
-    return item
+def prospect_factory():
+    """Create a pipeline prospect with every required field filled in."""
+
+    def make(**overrides):
+        data = {
+            "name": "Barbell Union",
+            "type": "strength",
+            "address": "1408 E 6th St, Austin, TX",
+            "website": "https://barbellunion.example",
+            "instagram": "@barbellunion",
+            "distance_miles": 1.2,
+            "members": 320,
+            "pct_18_34": 74,
+            "pct_women": 41,
+            "athlete_focus": "high",
+            "has_drink_fridge": True,
+            "sells_supplements": True,
+            "warm_intro": "",
+            "stage": "Not contacted",
+            "next_action": "",
+            "next_action_date": None,
+            "notes": "",
+            "lat": 35.91,
+            "lng": -79.05,
+        }
+        data.update(overrides)
+        with SessionLocal() as db:
+            item = Prospect(**data)
+            db.add(item)
+            db.commit()
+            db.refresh(item)
+        return item
+
+    return make
+
+
+@pytest.fixture
+def prospect(prospect_factory):
+    return prospect_factory()

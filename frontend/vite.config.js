@@ -2,8 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // The sandbox preview reaches the dev server through a proxy, so the Host
-// header is not localhost. Extend the allowlist only inside the Base44
-// preview sandbox; everywhere else the defaults apply unchanged.
+// header is not localhost. Extend the allowlist only inside the Base44 preview
+// sandbox; everywhere else the defaults apply unchanged. Vite >= 6.1 also
+// appends __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS on its own.
 const allowedHosts = ["localhost", "127.0.0.1"];
 
 if (process.env.BASE44_PREVIEW_MODE === "1") {
@@ -22,7 +23,7 @@ export default defineConfig({
     allowedHosts,
     proxy: {
       "/api": {
-        target: process.env.VITE_API_PROXY_TARGET || "http://localhost:8000",
+        target: process.env.VITE_API_PROXY_TARGET || "http://api:8000",
         changeOrigin: false,
       },
     },

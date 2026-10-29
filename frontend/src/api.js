@@ -1,54 +1,44 @@
-const JSON_HEADERS = { "Content-Type": "application/json" };
-
-async function request(path, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    headers: { ...JSON_HEADERS, ...(options.headers || {}) },
-  });
-
-  const text = await response.text();
-  let data = null;
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = null;
-    }
-  }
-
+const parse = async (response) => {
   if (!response.ok) {
-    const detail = data && (data.detail || data.message);
-    const message =
+    const body = await response.json().catch(() => ({}));
+    const detail = body.detail;
+    throw new Error(
       typeof detail === "string"
         ? detail
         : detail
           ? JSON.stringify(detail)
-          : `Request failed (${response.status})`;
-    throw new Error(message);
+          : `Request failed (${response.status})`,
+    );
   }
+  return response.json();
+};
 
-  return data;
-}
+const withJson = (method, body) => ({
+  method,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
 
-export function listProspects() {
-  return request("/api/prospects");
-}
+export const fetchProspects = () => fetch("/api/prospects").then(parse);
 
-export function getProspect(id) {
-  return request(`/api/prospects/${id}`);
-}
+export const fetchProspect = (id) => fetch(`/api/prospects/${id}`).then(parse);
 
-export function findContact(id) {
-  return request(`/api/prospects/${id}/find-contact`, { method: "POST" });
-}
+export const patchProspect = (id, patch) =>
+  fetch(`/api/prospects/${id}`, withJson("PATCH", patch)).then(parse);
 
-export function saveContact(id, contact) {
-  return request(`/api/prospects/${id}/contacts`, {
-    method: "POST",
-    body: JSON.stringify(contact),
-  });
-}
+export const logFollowUp = (id, payload) =>
+  fetch(`/api/prospects/${id}/follow-up`, withJson("POST", payload)).then(parse);
 
-export function getOutreachDraft(id) {
-  return request(`/api/prospects/${id}/outreach-draft`, { method: "POST" });
-}
+export const draftOutreach = (id) =>
+  fetch(`/api/prospects/${id}/draft-outreach`, { method: "POST" }).then(parse);
+
+export const findContact = (id) =>
+  fetch(`/api/prospects/${id}/find-contact`, { method: "POST" }).then(parse);
+
+export const saveContact = (id, contact) =>
+  fetch(`/api/prospects/${id}/contacts`, withJson("POST", contact)).then(parse);
+
+export const fetchSettings = () => fetch("/api/settings").then(parse);
+
+export const saveSettings = (patch) =>
+  fetch("/api/settings", withJson("PUT", patch)).then(parse);

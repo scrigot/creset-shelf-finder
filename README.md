@@ -1,74 +1,61 @@
-# Crest Shelf Finder
+# Creset Shelf Finder
 
-A prospecting tool for Crest: it ranks gyms that could stock Crest drinks and
-supplements, finds the person who decides what goes on their shelf, and drafts the
-first outreach email.
+Prospect scoring and outreach tracker for Creset, a creatine water brand selling into gyms, studios and fitness partners around UNC Chapel Hill.
 
-## What it does
+## What's in the app
 
-- **Ranked prospect table** — gyms ordered by fit score, with the primary contact
-  in the Contact column and a green dot when that person's email is verified or
-  listed publicly.
-- **Prospect detail** — gym name, type, address, website, Instagram, fit score and
-  every contact on file.
-- **Find contact** — runs one LLM request with internet context (OpenAI Responses
-  API + the `web_search` tool) against the gym's website, Google Business listing,
-  Instagram, LinkedIn and local news. It targets the role that owns drinks and
-  supplement purchasing for that gym type, and returns up to three candidates,
-  best first, each with a source URL.
-- **Contact cards** — name, role, email with a status badge (verified / listed
-  publicly / guessed / no email), confidence, source link and one line of
-  reasoning. *Use this contact* saves the person as primary; *Not right* hides the
-  card; *Re-run search* starts over.
-- **Find & outreach page** (`/outreach`) — a workspace that pairs the ranked
-  prospect list with the contact search and the outreach email, so a founder,
-  owner or general manager can be found and written to without changing screens.
-- **Draft outreach** — addresses the primary contact by first name and mentions
-  their role, with their email already in the To field.
+**Scoring (0–100)** — computed in `frontend/src/scoring.js`, weighted by five sidebar sliders that re-rank the table live:
 
-## Email rules
+| Component | Default weight | Input |
+| --- | --- | --- |
+| Fit | 30 | gym type map (strength 100 → big-box 52) |
+| Size | 25 | members, log-scaled against a 3,000-member cap |
+| Demographics | 20 | 40% age 18–34, 20% % women, 40% athlete focus (low 40 / med 70 / high 100) |
+| Location | 15 | 100 − 7.5 points per mile |
+| Ease | 10 | drink fridge 35 + sells supplements 25 + warm intro 40 |
 
-The search never invents an address. Enforced in
-`backend/app/services/contact_search.py`:
+Weights are normalised by their sum, so any slider combination re-ranks consistently.
 
-- No published email → the gym's general address is used and marked
-  `listed_publicly`, or `none` when there is only a contact form.
-- A pattern guess must be marked `guessed`, and the server forces its confidence to
-  `low`.
-- Invalid addresses are dropped rather than shown.
-- Typographic hyphens copied from web pages are repaired to `-`.
+**Opportunity value ($/yr)** = members × adoption % × bottles per week × margin per bottle × 52. Adoption, bottles and margin are global inputs in the sidebar and persist in the `settings` table.
 
-## Pages
+**Views**
 
-| Route | Page |
-| --- | --- |
-| `/` | Ranked prospect table |
-| `/prospects/:id` | Prospect detail with contact search and saved contacts |
-| `/outreach` | Find & outreach workspace (pick a prospect, search, draft) |
+- *Pipeline* — dense ranked table (score, breakdown bar, $/yr, contact, stage, next action with overdue dates in red), plus a map of prospects shaded by score.
+- *Follow-ups* — everything due today or overdue, oldest first.
+- *Find & outreach* — pick a prospect, run **Find contact**, and write the email on one screen.
+- *Prospect drawer* — score breakdown, stage dropdown, contact search, activity log, "Log follow-up" (sets next action + date), and "Draft outreach".
+
+**Find contact** searches the web (OpenAI Responses API with the `web_search` tool) for the person who decides what the gym stocks. The role it targets follows the gym type: owner then head coach for independent/CrossFit gyms, franchise owner or GM for boutiques and chains (with a note when corporate approval is needed), retail/operations manager for campus rec, organizer or host store for run clubs. It reads the gym's own About/Team/Contact pages, its Google Business listing, Instagram, LinkedIn and local press, and returns up to three candidates with a source link each.
+
+**Email rules** — enforced in `backend/app/services/contact_search.py`, not just in the prompt:
+
+- No published address → the gym's general address marked `listed_publicly`, or `none` when only a contact form exists.
+- A pattern guess must be marked `guessed`, and the server forces its confidence to `low`.
+- Invalid addresses are dropped, and typographic hyphens copied from web pages are repaired.
+
+**Draft outreach** addresses the primary contact by first name and role, with their email in the To field. It calls OpenAI when `OPENAI_API_KEY` is set and otherwise falls back to a written template.
 
 ## Stack
 
-- `backend/` — FastAPI + SQLAlchemy + PostgreSQL, served by uvicorn with `--reload`
-- `frontend/` — React + Vite dev server on port 3000, proxying `/api` to the API
-  (single origin, so no CORS or cookie settings are needed)
-- `db` — PostgreSQL 16 with a named volume
+- `frontend/` — React + Vite dev server on port 3000; proxies `/api` to the backend so the app is same-origin.
+- `backend/` — FastAPI + SQLAlchemy on port 8000 (OpenAPI at `/docs`), with `pytest` coverage of the contact rules and API.
+- `db` — Postgres 16, seeded with 25 Chapel Hill / Durham prospects on first start.
 
-## Run it
+## Running it
 
 ```bash
 docker compose -f docker-compose.base44.yml up -d --build
 ```
 
-The app is at http://localhost:3000. Demo prospects are seeded once, when the
-prospects table is empty.
+UI: http://localhost:3000 · API: http://localhost:8000
 
 ### Environment
 
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | Set by Compose to the local Postgres service |
-| `OPENAI_API_KEY` | Enables Find contact's live web search. Delivered by the platform to `/run/base44/app.env`; without a key the endpoint returns a clear 503 instead of guessing |
-| `OPENAI_MODEL` | Defaults to `gpt-4.1` |
+| `OPENAI_API_KEY` | Web search for Find contact and model copy for drafts. Delivered by the platform to `/run/base44/app.env`; without it Find contact returns a clear 503 and drafts stay templated |
+| `OPENAI_MODEL` | Defaults to `gpt-4.1` for contact search |
 | `OPENAI_BASE_URL` | Defaults to `https://api.openai.com/v1` |
 | `SEED_DEMO_DATA` | `0` disables demo seeding (the tests set it) |
 
@@ -78,16 +65,25 @@ prospects table is empty.
 docker compose -f docker-compose.base44.yml exec -T api python -m pytest -q
 ```
 
-The suite uses a throwaway SQLite file at `/tmp/crest_test.db`, so it never touches
-the development database or the network.
+The suite uses a throwaway SQLite file at `/tmp/crest_test.db`, so it never touches the development database or the network.
 
 ## API
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/prospects` | Ranked table with primary contacts |
-| `GET` | `/api/prospects/{id}` | Prospect detail with contacts |
-| `POST` | `/api/prospects/{id}/find-contact` | Web-search contact candidates |
-| `POST` | `/api/prospects/{id}/contacts` | Save a contact (primary demotes others) |
-| `POST` | `/api/prospects/{id}/outreach-draft` | Build the outreach email |
-| `GET` | `/api/health` | Health check |
+| GET | `/api/health` | Liveness (used by the compose healthcheck) |
+| GET | `/api/prospects` | All prospects with their primary contact |
+| GET | `/api/prospects/{id}` | Prospect with contacts and activity log |
+| PATCH | `/api/prospects/{id}` | Stage, next action/date, notes |
+| POST | `/api/prospects/{id}/activities` | Append an activity |
+| POST | `/api/prospects/{id}/follow-up` | Set next action + date and log it |
+| POST | `/api/prospects/{id}/find-contact` | Web-search contact candidates |
+| POST | `/api/prospects/{id}/contacts` | Save a contact (primary demotes others) |
+| POST | `/api/prospects/{id}/draft-outreach` | AI or template email draft |
+| GET/PUT | `/api/settings` | Weights and value-model inputs |
+
+## Sandbox notes
+
+- `BASE44_PREVIEW_MODE` is passed through to both services; only `vite.config.js` branches on it, to extend the dev-server host allowlist.
+- Vite receives the preview host via `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` (passed through by Compose) and, inside the sandbox, an explicit `allowedHosts` entry.
+- The backend waits for Postgres (`wait_for_db`) before creating tables.

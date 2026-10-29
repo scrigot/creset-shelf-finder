@@ -13,37 +13,49 @@ from ..models import Prospect
 from ..schemas import CONFIDENCES, EMAIL_STATUSES
 from . import llm
 
-GYM_TYPE_RULES = {
-    "independent_strength": (
-        "Independent strength gym. Target the owner first, then the head coach — "
-        "they decide what is stocked and buy it themselves."
-    ),
-    "crossfit": (
-        "CrossFit box. Target the box owner first, then the head coach — "
-        "they decide what is stocked and buy it themselves."
-    ),
-    "boutique_franchise": (
-        "Boutique studio or franchise (Orangetheory, F45, Planet Fitness, and the like). "
-        "Target the franchise owner or the general manager, not a corporate inbox. "
-        "Note in the reasoning when corporate or franchise approval is likely required "
-        "before a product reaches the shelf."
-    ),
-    "campus_rec": (
-        "Campus recreation centre. Target the retail manager or the operations manager "
-        "who owns concessions and pro-shop purchasing."
-    ),
-    "run_club": (
-        "Run club. Target the club organizer, or the store that hosts the run club and "
-        "handles its retail."
-    ),
+# Prospect types are the pipeline's own labels ("strength", "crossfit", ...).
+TYPE_LABELS = {
+    "strength": "Independent strength gym",
+    "crossfit": "CrossFit box",
+    "boutique": "Boutique studio",
+    "big-box": "Big-box gym",
+    "yoga/spin": "Yoga and spin studio",
+    "campus rec": "Campus recreation centre",
+    "run club": "Run club",
 }
 
-GYM_TYPE_LABELS = {
-    "independent_strength": "Independent strength gym",
-    "crossfit": "CrossFit box",
-    "boutique_franchise": "Boutique / franchise studio",
-    "campus_rec": "Campus recreation",
-    "run_club": "Run club",
+INDEPENDENT_RULE = (
+    "Independent strength gym. Target the owner first, then the head coach — "
+    "they decide what is stocked and buy it themselves."
+)
+CROSSFIT_RULE = (
+    "CrossFit box. Target the box owner first, then the head coach — "
+    "they decide what is stocked and buy it themselves."
+)
+BOUTIQUE_RULE = (
+    "Boutique studio or franchise (Orangetheory, F45, Planet Fitness, and the like). "
+    "Target the franchise owner or the general manager, not a corporate inbox. "
+    "Note in the reasoning when corporate or franchise approval is likely required "
+    "before a product reaches the shelf."
+)
+CAMPUS_RULE = (
+    "Campus recreation centre. Target the retail manager or the operations manager "
+    "who owns concessions and pro-shop purchasing."
+)
+RUN_CLUB_RULE = (
+    "Run club. Target the club organizer, or the store that hosts the run club and "
+    "handles its retail."
+)
+DEFAULT_RULE = "Find the person who decides what drinks and supplements the gym stocks."
+
+TYPE_RULES = {
+    "strength": INDEPENDENT_RULE,
+    "crossfit": CROSSFIT_RULE,
+    "boutique": BOUTIQUE_RULE,
+    "big-box": BOUTIQUE_RULE,
+    "yoga/spin": BOUTIQUE_RULE,
+    "campus rec": CAMPUS_RULE,
+    "run club": RUN_CLUB_RULE,
 }
 
 EMAIL_STATUS_ALIASES = {
@@ -142,18 +154,21 @@ supplement purchasing goes first.
 Answer with JSON that matches the provided schema and nothing else."""
 
 
+def type_label(prospect: Prospect) -> str:
+    return TYPE_LABELS.get(prospect.type) or prospect.type.replace("_", " ")
+
+
+def type_rule(prospect: Prospect) -> str:
+    return TYPE_RULES.get(prospect.type, DEFAULT_RULE)
+
+
 def build_user_prompt(prospect: Prospect) -> str:
-    label = GYM_TYPE_LABELS.get(prospect.gym_type, prospect.gym_type.replace("_", " "))
-    rule = GYM_TYPE_RULES.get(
-        prospect.gym_type,
-        "Find the person who decides what drinks and supplements the gym stocks.",
-    )
     lines = [
         f"Today's date: {date.today().isoformat()}.",
         "",
         "Gym to research:",
         f"- Name: {prospect.name}",
-        f"- Type: {label}",
+        f"- Type: {type_label(prospect)}",
         f"- Address: {prospect.address or 'not provided'}",
         f"- Website: {prospect.website or 'not provided'}",
     ]
@@ -162,7 +177,7 @@ def build_user_prompt(prospect: Prospect) -> str:
     lines += [
         "",
         "Who to look for:",
-        rule,
+        type_rule(prospect),
         "",
         "Return up to three candidates, best first. For each candidate fill every field: "
         "name, role, email, email_status, phone, instagram, linkedin_url, source_url, "
@@ -184,7 +199,9 @@ def search_contacts(prospect: Prospect) -> list[dict]:
     return normalize_candidates(result.data, search_sources=result.search_sources)
 
 
-def resolve_source_url(value: Optional[str], search_sources: Optional[list[list[str]]]) -> Optional[str]:
+def resolve_source_url(
+    value: Optional[str], search_sources: Optional[list[list[str]]]
+) -> Optional[str]:
     """Turn a full URL, or a `turn1search4` citation token, into a real link."""
     if not value:
         return None

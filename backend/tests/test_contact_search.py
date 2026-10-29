@@ -179,7 +179,7 @@ def test_normalize_ignores_blank_names_and_bad_payloads():
 def test_prompt_targets_the_role_rules_for_the_gym_type():
     prospect = Prospect(
         name="Orangetheory Westgate",
-        gym_type="boutique_franchise",
+        type="boutique",
         address="4712 Westgate Blvd, Austin, TX",
         website="https://otfwestgate.example",
     )
@@ -190,12 +190,12 @@ def test_prompt_targets_the_role_rules_for_the_gym_type():
     assert "4712 Westgate Blvd" in prompt
     assert "franchise owner" in prompt
     assert "corporate" in prompt
-    assert "Boutique / franchise studio" in prompt
+    assert "Boutique studio" in prompt
 
 
 def test_every_gym_type_has_a_target_role_rule():
-    for gym_type in contact_search.GYM_TYPE_RULES:
-        prospect = Prospect(name="Test Gym", gym_type=gym_type)
+    for gym_type in contact_search.TYPE_RULES:
+        prospect = Prospect(name="Test Gym", type=gym_type)
         prompt = contact_search.build_user_prompt(prospect)
         assert "Who to look for:" in prompt
-        assert contact_search.GYM_TYPE_RULES[gym_type].split(".")[0] in prompt
+        assert contact_search.TYPE_RULES[gym_type].split(".")[0] in prompt
