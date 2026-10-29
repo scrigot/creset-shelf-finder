@@ -12,6 +12,12 @@ docker compose -f docker-compose.base44.yml up -d --build
 - `api` (FastAPI, uvicorn `--reload`) is also published on host port 8000; `/docs` is the OpenAPI UI.
 - `db` is Postgres 16 with generated dev credentials inline in the compose file (local infra, not secrets).
 
+## Deploying
+
+- Production is the repo-root `Dockerfile`: stage 1 builds `frontend/dist`, stage 2 serves that bundle from FastAPI alongside `/api`, so a deployment is same-origin like the dev proxy and `frontend/src/api.js` needs no changes.
+- `STATIC_DIR` is the only switch. The image sets it; the sandbox never does, so the static mount does not exist in development and Vite keeps serving the UI there. A deployment therefore adds no route the dev stack has to satisfy.
+- `docker-compose.prod.yml` (separate project name, host port `8080`) is a single-host flavour of the same image; managed hosts only need the image plus a Postgres `DATABASE_URL`. No provider config is committed.
+
 ## Brand
 
 The UI follows Creset's own identity (`drinkcreset.com`): off-white field `#f4f4f4`, near-black ink `#1a1a1a`, a single red accent `#e31d2b` reserved for overdue/late states, bold uppercase labels and pill controls. The wordmark is the brand's own black-on-transparent PNG, self-hosted at `frontend/public/creset-logo.png` (also the favicon). Brand colours live as CSS variables at the top of `frontend/src/styles.css`; the map's SVG strokes are hardcoded in `MapView.jsx`, and `scoreShade()` in `scoring.js` ramps light→dark for a light background, so all three need touching together if the palette changes again.
