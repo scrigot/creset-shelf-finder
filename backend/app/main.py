@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -159,3 +161,10 @@ def update_settings(payload: SettingsUpdate):
         session.commit()
         session.refresh(settings)
         return settings
+
+
+# Production runs the built UI and API on one origin. Local Vite development
+# continues to proxy /api to this service when no frontend build is present.
+frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if frontend_dist.is_dir():
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")

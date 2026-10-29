@@ -14,7 +14,7 @@ docker compose -f docker-compose.base44.yml up -d --build
 
 ## Brand
 
-The UI follows Creset's own identity (`drinkcreset.com`): off-white field `#f4f4f4`, near-black ink `#1a1a1a`, a single red accent `#e31d2b` reserved for overdue/late states, bold uppercase labels and pill controls. The wordmark is the brand's own black-on-transparent PNG, self-hosted at `frontend/public/creset-logo.png` (also the favicon). Brand colours live as CSS variables at the top of `frontend/src/styles.css`; the map's SVG strokes are hardcoded in `MapView.jsx`, and `scoreShade()` in `scoring.js` ramps light→dark for a light background, so all three need touching together if the palette changes again.
+The UI follows Creset's own identity (`drinkcreset.com`): off-white field `#f4f4f4`, near-black ink `#1a1a1a`, a single red accent `#e31d2b` reserved for overdue/late states, bold uppercase labels and pill controls. The wordmark is the brand's own black-on-transparent PNG, self-hosted at `frontend/public/creset-logo.png` (also the favicon). Brand colours live as CSS variables at the top of `frontend/src/styles.css`; Leaflet marker styling lives there too, and `scoreShade()` in `scoring.js` ramps light→dark for a light background, so update both if the palette changes again.
 
 ## Things that bite
 
@@ -34,3 +34,16 @@ The UI follows Creset's own identity (`drinkcreset.com`): off-white field `#f4f4
 - `curl -s localhost:3000/api/health` → `{"status":"ok"}` proves the Vite proxy and API are both alive.
 - `curl -s localhost:3000/api/prospects | head -c 200` returns seeded rows; an empty array on a fresh volume means seeding did not run.
 - In the UI: the table is sorted by score descending; moving a weight slider re-ranks it; Follow-ups lists dates today or earlier with late ones in red; the drawer's stage change and Log follow-up persist (reopen to confirm).
+
+## Street map
+
+- `MapView.jsx` uses Leaflet and OpenStreetMap tiles with visible attribution. Pins use saved coordinates without geocoding. Scores update without resetting zoom; coordinate/filter changes refit bounds. Clean up the map and resize observer on unmount for StrictMode.
+- `fitReasons()` uses the same scoring breakdown for detail-drawer evidence. Active factors at least 70/100 appear as strengths; lower factors appear as concerns; zero-weight factors remain visible separately. These describe the model, not verified buying interest.
+- Run `npm test` in `frontend/` for scoring/evidence checks and `npm run build` for the production build.
+
+## Shared hosting
+
+- Root `Dockerfile` builds the frontend and serves its output through FastAPI. `/api` routes must be registered before the static mount. Keep `backend/Dockerfile` and Compose for local Base44 development.
+- `render.yaml` targets `wills-branch`, creates a private Postgres DB and web service, and disables auto-deploy. Free DBs are temporary (30 days); review paid plans for continued use. The app has no auth, so everyone with the public URL can read/write.
+- Render supplies a plain `postgresql://` URL. `db.py` selects the installed psycopg 3 driver explicitly without altering credentials or query options.
+- Backend integration checks: after building the frontend and installing `httpx`, run `python -m unittest discover -s tests` from `backend/`. Tests isolate their SQLite DB and verify routing plus cross-client saves. Docker/Postgres deployment verification is still required in the hosting account.

@@ -2,13 +2,18 @@ import os
 import time
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", "postgresql+psycopg://crest:crest@db:5432/crest"
 )
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+database_url = make_url(DATABASE_URL)
+if database_url.drivername in {"postgres", "postgresql"}:
+    database_url = database_url.set(drivername="postgresql+psycopg")
+
+engine = create_engine(database_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
