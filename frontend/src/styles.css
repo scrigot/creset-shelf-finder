@@ -554,18 +554,54 @@ textarea {
   padding: 22px 24px 40px;
 }
 
-.map-svg {
+.street-map {
+  position: relative;
+  z-index: 0;
   display: block;
   width: 100%;
-  height: auto;
+  height: clamp(380px, 65vh, 720px);
   border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--surface);
 }
 
-.map-pin {
+.gym-marker {
   cursor: pointer;
 }
+
+.gym-marker-shape {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid white;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 7px #0005;
+}
+
+.gym-marker-shape span {
+  transform: rotate(45deg);
+  color: white;
+  background: #1a1a1a;
+  border-radius: 50%;
+  padding: 3px;
+  font: 700 12px/1.1 sans-serif;
+}
+
+.gym-marker:focus-visible .gym-marker-shape,
+.gym-marker.selected .gym-marker-shape {
+  outline: 3px solid #1a1a1a;
+  outline-offset: 3px;
+}
+
+.map-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; font-size: 12px; }
+.fit-reasons h3 { font-size: 13px; margin: 20px 0 10px; }
+.fit-reasons ul { list-style: none; padding: 0; margin: 0; }
+.fit-reasons li { display: grid; gap: 5px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 12px; line-height: 1.5; }
+.fit-reasons small { color: var(--muted); }
+.fit-context { font-size: 12px; line-height: 1.6; }
 
 .map-caption {
   margin-top: 14px;
