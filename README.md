@@ -2,6 +2,8 @@
 
 Prospect scoring and outreach tracker for Creset, a creatine water brand selling into gyms, studios and fitness partners around UNC Chapel Hill.
 
+See the [release notes](CHANGELOG.md) for changes in each version.
+
 ## Stack
 
 - `frontend/` — React + Vite dev server on port 3000; proxies `/api` to the backend so the app is same-origin.
