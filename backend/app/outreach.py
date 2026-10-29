@@ -15,15 +15,41 @@ TYPE_LABEL = {
 BRAND = "Creset"
 
 
-def _template(prospect) -> tuple[str, str]:
+def _first_name(name) -> str:
+    if not name:
+        return ""
+    return name.strip().split()[0]
+
+
+def _greeting(prospect, contact) -> str:
+    first = _first_name(contact.name) if contact else ""
+    return f"Hi {first}," if first else f"Hi {prospect.name} team,"
+
+
+def _role_line(prospect, contact) -> str:
+    """Open with why this person was picked, when we know who they are."""
+    if not contact:
+        return ""
+    role = (contact.role or "").strip()
+    if role:
+        return (
+            f"As the {role} at {prospect.name}, you're the person who decides which drinks "
+            "and supplements make it onto the shelf — so I wanted to reach you directly.\n\n"
+        )
+    return (
+        "You're the person who decides which drinks and supplements make it onto the "
+        f"shelf at {prospect.name} — so I wanted to reach you directly.\n\n"
+    )
+
+
+def _template(prospect, contact) -> tuple[str, str]:
     label = TYPE_LABEL.get(prospect.type, prospect.type)
     members = prospect.members
     subject = f"{BRAND} + {prospect.name}: creatine water for your {members} members"
-    intro_line = (
-        f" — {prospect.warm_intro}" if prospect.warm_intro else ""
-    )
+    intro_line = f" — {prospect.warm_intro}" if prospect.warm_intro else ""
     body = (
-        f"Hi {prospect.name} team,\n\n"
+        f"{_greeting(prospect, contact)}\n\n"
+        f"{_role_line(prospect, contact)}"
         f"I'm with {BRAND}, a creatine water built for people who train hard and want "
         f"hydration that pulls double duty. One bottle carries a full 5g dose, with no "
         f"shaker, no powder, no aftertaste.\n\n"
@@ -41,14 +67,22 @@ def _template(prospect) -> tuple[str, str]:
     return subject, body
 
 
-def _llm(api_key: str, prospect) -> tuple[str, str]:
+def _llm(api_key: str, prospect, contact) -> tuple[str, str]:
     label = TYPE_LABEL.get(prospect.type, prospect.type)
+    person = ""
+    if contact:
+        person = (
+            f"Address {contact.name}"
+            + (f", {contact.role}" if contact.role else "")
+            + " by first name and mention their role, because they decide what the gym "
+            "stocks. "
+        )
     prompt = (
         f"Write a short, plain-spoken outreach email (max 130 words) from {BRAND}, a "
         f"creatine water brand, to {prospect.name}, a {label} in {prospect.address} "
         f"with about {prospect.members} members, {prospect.distance_miles} miles from "
-        f"UNC Chapel Hill. Mention its gym type and member count naturally. If a warm "
-        f"intro is given, use it: {prospect.warm_intro or 'none'}. End with a low-"
+        f"UNC Chapel Hill. Mention its gym type and member count naturally. {person}"
+        f"If a warm intro is given, use it: {prospect.warm_intro or 'none'}. End with a low-"
         f"pressure ask for a sample drop. No hype, no emoji. Return JSON with keys "
         f"'subject' and 'body'."
     )
@@ -74,14 +108,14 @@ def _llm(api_key: str, prospect) -> tuple[str, str]:
     return parsed["subject"], parsed["body"]
 
 
-def draft_outreach(prospect) -> tuple[str, str, str]:
+def draft_outreach(prospect, contact=None) -> tuple[str, str, str]:
     """Return (subject, body, source). Falls back to a written template without a key."""
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if api_key:
         try:
-            subject, body = _llm(api_key, prospect)
+            subject, body = _llm(api_key, prospect, contact)
             return subject, body, "ai"
         except Exception:
             pass
-    subject, body = _template(prospect)
+    subject, body = _template(prospect, contact)
     return subject, body, "template"

@@ -1,88 +1,97 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { TYPE_LABEL, scoreShade } from "../scoring";
 
-const WIDTH = 860;
-const HEIGHT = 560;
-const PAD = 46;
-const CAMPUS = { lat: 35.9132, lng: -79.0558 };
+const CAMPUS = [35.9132, -79.0558];
+const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors';
 
 export default function MapView({ rows, onSelect, selectedId }) {
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const layerRef = useRef(null);
+  const lastIdsRef = useRef(null);
+  const [ready, setReady] = useState(false);
   const [hovered, setHovered] = useState(null);
 
-  const lats = [...rows.map((row) => row.lat), CAMPUS.lat];
-  const lngs = [...rows.map((row) => row.lng), CAMPUS.lng];
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const spanLat = maxLat - minLat || 1;
-  const spanLng = maxLng - minLng || 1;
+  // Build the map once; StrictMode remounts clean it up and rebuild it.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-  const x = (lng) => PAD + ((lng - minLng) / spanLng) * (WIDTH - PAD * 2);
-  const y = (lat) => HEIGHT - PAD - ((lat - minLat) / spanLat) * (HEIGHT - PAD * 2);
+    const map = L.map(container, { center: CAMPUS, zoom: 12, scrollWheelZoom: false });
+    L.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 19 }).addTo(map);
+
+    const markers = L.layerGroup().addTo(map);
+    L.circleMarker(CAMPUS, { radius: 5, color: "#1a1a1a", weight: 1.5, fill: false })
+      .bindTooltip("UNC Chapel Hill", {
+        permanent: true,
+        direction: "right",
+        className: "map-campus-label",
+      })
+      .addTo(markers);
+
+    mapRef.current = map;
+    layerRef.current = markers;
+    lastIdsRef.current = null;
+    setReady(true);
+    map.invalidateSize();
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      layerRef.current = null;
+      setReady(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = layerRef.current;
+    if (!ready || !map || !layer) return;
+
+    layer.eachLayer((item) => {
+      if (item.__prospectId) layer.removeLayer(item);
+    });
+
+    rows.forEach((row) => {
+      const isSelected = row.id === selectedId;
+      const marker = L.circleMarker([row.lat, row.lng], {
+        radius: isSelected ? 9 : 6,
+        fillColor: scoreShade(row.score),
+        fillOpacity: 1,
+        color: isSelected ? "#1a1a1a" : "#ffffff",
+        weight: isSelected ? 2.5 : 1.5,
+        bubblingMouseEvents: false,
+      });
+      marker.__prospectId = row.id;
+      marker.bindTooltip(`${row.name} · ${Math.round(row.score)} · ${TYPE_LABEL[row.type] ?? row.type}`);
+      marker.on("click", () => onSelect(row.id));
+      marker.on("mouseover", () => setHovered(row.id));
+      marker.on("mouseout", () => setHovered(null));
+      marker.addTo(layer);
+    });
+
+    // Only re-frame when the visible set of prospects changes.
+    const ids = rows.map((row) => row.id).join(",");
+    if (ids !== lastIdsRef.current) {
+      lastIdsRef.current = ids;
+      const points = [...rows.map((row) => [row.lat, row.lng]), CAMPUS];
+      if (points.length > 1) {
+        map.fitBounds(points, { padding: [42, 42], maxZoom: 14 });
+      } else {
+        map.setView(CAMPUS, 13);
+      }
+    }
+  }, [rows, selectedId, ready, onSelect]);
 
   const active = rows.find((row) => row.id === (hovered ?? selectedId));
 
   return (
     <div className="map-wrap">
-      <svg
-        className="map-svg"
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        role="img"
-        aria-label="Map of prospects coloured by score"
-      >
-        <defs>
-          <pattern id="grid" width="62" height="62" patternUnits="userSpaceOnUse">
-            <path d="M 62 0 L 0 0 0 62" fill="none" stroke="#ededed" strokeWidth="1" />
-          </pattern>
-        </defs>
-        <rect width={WIDTH} height={HEIGHT} fill="url(#grid)" />
-
-        {[0.25, 0.5, 0.75].map((ratio) => (
-          <line
-            key={ratio}
-            x1={PAD}
-            x2={WIDTH - PAD}
-            y1={PAD + ratio * (HEIGHT - PAD * 2)}
-            y2={PAD + ratio * (HEIGHT - PAD * 2)}
-            stroke="#e3e3e3"
-            strokeDasharray="3 6"
-          />
-        ))}
-
-        {/* UNC campus reference */}
-        <g>
-          <circle cx={x(CAMPUS.lng)} cy={y(CAMPUS.lat)} r="5" fill="none" stroke="#1a1a1a" strokeWidth="1.5" />
-          <circle cx={x(CAMPUS.lng)} cy={y(CAMPUS.lat)} r="12" fill="none" stroke="#d2d2d2" strokeWidth="1" />
-          <text x={x(CAMPUS.lng) + 17} y={y(CAMPUS.lat) + 4} fill="#6b6b6b" fontSize="10" letterSpacing="2">
-            UNC
-          </text>
-        </g>
-
-        {rows.map((row) => {
-          const isSelected = row.id === selectedId;
-          return (
-            <g
-              key={row.id}
-              className="map-pin"
-              onMouseEnter={() => setHovered(row.id)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={() => onSelect(row.id)}
-            >
-              <circle
-                cx={x(row.lng)}
-                cy={y(row.lat)}
-                r={isSelected ? 8 : 6}
-                fill={scoreShade(row.score)}
-                stroke={isSelected ? "#1a1a1a" : "#ffffff"}
-                strokeWidth={isSelected ? 2 : 1}
-              />
-              <circle cx={x(row.lng)} cy={y(row.lat)} r="15" fill="transparent" />
-              <title>{`${row.name} · ${Math.round(row.score)} · ${TYPE_LABEL[row.type] ?? row.type}`}</title>
-            </g>
-          );
-        })}
-      </svg>
+      <div className="map-canvas" ref={containerRef} role="application" aria-label="Map of prospects coloured by score" />
 
       <div className="map-caption">
         {active ? (
@@ -91,7 +100,7 @@ export default function MapView({ rows, onSelect, selectedId }) {
             {active.members.toLocaleString()} members · score {Math.round(active.score)}
           </span>
         ) : (
-          <span>Click a marker to open the prospect. Points sit by real distance from campus.</span>
+          <span>Click a marker to open the prospect. Pins sit at each gym&rsquo;s real address.</span>
         )}
       </div>
 

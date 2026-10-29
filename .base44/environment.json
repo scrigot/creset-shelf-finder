@@ -5,7 +5,7 @@
   "secrets": [
     {
       "name": "OPENAI_API_KEY",
-      "description": "Optional. Enables model-written outreach emails from the prospect drawer (Create a key at https://platform.openai.com/api-keys). Without it, Draft outreach uses a built-in template.",
+      "description": "OpenAI API key with web-search access, used by Find contact (Responses API + the web_search tool) and by Draft outreach for model-written copy. Get one at https://platform.openai.com/api-keys. Without it the pipeline, contacts on file and template drafts still work, Find contact returns a clear 503, and Draft outreach falls back to the built-in template.",
       "requiredAtBoot": false
     }
   ]

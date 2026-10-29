@@ -1,3 +1,4 @@
+import os
 from datetime import date, timedelta
 
 from sqlalchemy import select
@@ -39,6 +40,8 @@ PROSPECTS = [
 
 def seed() -> None:
     """Populate the pipeline the first time the database is empty."""
+    if os.environ.get("SEED_DEMO_DATA", "1") != "1":
+        return
     with SessionLocal() as session:
         if session.scalars(select(Prospect).limit(1)).first() is not None:
             return

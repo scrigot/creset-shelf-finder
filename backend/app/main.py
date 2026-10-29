@@ -7,9 +7,12 @@ from sqlalchemy.orm import selectinload
 from .db import Base, SessionLocal, engine, wait_for_db
 from .models import Activity, Prospect, Settings
 from .outreach import draft_outreach
+from .routers import contacts
+from .routers.contacts import primary_contact, sorted_contacts
 from .schemas import (
     ActivityCreate,
     ActivityOut,
+    ContactOut,
     DraftOut,
     FollowUpIn,
     ProspectDetail,
@@ -29,7 +32,8 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Creset Shelf Finder API", lifespan=lifespan)
+app = FastAPI(title="Crest Shelf Finder API", lifespan=lifespan)
+app.include_router(contacts.router)
 
 
 def get_settings(session) -> Settings:
@@ -42,12 +46,15 @@ def get_settings(session) -> Settings:
 
 
 def get_prospect(session, prospect_id: int) -> Prospect:
-    # Activities must be loaded before the session closes; the response is
-    # serialised after this function returns.
+    # Activities and contacts must be loaded before the session closes; the
+    # response is serialised after this function returns.
     prospect = session.scalars(
         select(Prospect)
         .where(Prospect.id == prospect_id)
-        .options(selectinload(Prospect.activities))
+        .options(
+            selectinload(Prospect.activities),
+            selectinload(Prospect.contacts),
+        )
         .execution_options(populate_existing=True)
     ).first()
     if prospect is None:
@@ -65,13 +72,29 @@ def health() -> dict:
 @app.get("/api/prospects", response_model=list[ProspectOut])
 def list_prospects():
     with SessionLocal() as session:
-        return session.scalars(select(Prospect).order_by(Prospect.name)).all()
+        rows = session.scalars(
+            select(Prospect)
+            .order_by(Prospect.name)
+            .options(selectinload(Prospect.contacts))
+        ).all()
+        out = []
+        for prospect in rows:
+            item = ProspectOut.model_validate(prospect)
+            primary = primary_contact(prospect)
+            item.primary_contact = ContactOut.model_validate(primary) if primary else None
+            out.append(item)
+        return out
 
 
 @app.get("/api/prospects/{prospect_id}", response_model=ProspectDetail)
 def get_prospect_detail(prospect_id: int):
     with SessionLocal() as session:
-        return get_prospect(session, prospect_id)
+        prospect = get_prospect(session, prospect_id)
+        detail = ProspectDetail.model_validate(prospect)
+        detail.contacts = [
+            ContactOut.model_validate(contact) for contact in sorted_contacts(prospect)
+        ]
+        return detail
 
 
 @app.patch("/api/prospects/{prospect_id}", response_model=ProspectDetail)
@@ -132,7 +155,8 @@ def log_follow_up(prospect_id: int, payload: FollowUpIn):
 def create_draft(prospect_id: int):
     with SessionLocal() as session:
         prospect = get_prospect(session, prospect_id)
-        subject, body, source = draft_outreach(prospect)
+        contact = primary_contact(prospect)
+        subject, body, source = draft_outreach(prospect, contact)
         session.add(
             Activity(
                 prospect_id=prospect.id,
@@ -141,7 +165,13 @@ def create_draft(prospect_id: int):
             )
         )
         session.commit()
-        return DraftOut(subject=subject, body=body, source=source)
+        return DraftOut(
+            to=(contact.email or "") if contact else "",
+            subject=subject,
+            body=body,
+            source=source,
+            contact_id=contact.id if contact else None,
+        )
 
 
 @app.get("/api/settings", response_model=SettingsOut)

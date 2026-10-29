@@ -1,7 +1,14 @@
 const parse = async (response) => {
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.detail || `Request failed (${response.status})`);
+    const detail = body.detail;
+    throw new Error(
+      typeof detail === "string"
+        ? detail
+        : detail
+          ? JSON.stringify(detail)
+          : `Request failed (${response.status})`,
+    );
   }
   return response.json();
 };
@@ -24,6 +31,12 @@ export const logFollowUp = (id, payload) =>
 
 export const draftOutreach = (id) =>
   fetch(`/api/prospects/${id}/draft-outreach`, { method: "POST" }).then(parse);
+
+export const findContact = (id) =>
+  fetch(`/api/prospects/${id}/find-contact`, { method: "POST" }).then(parse);
+
+export const saveContact = (id, contact) =>
+  fetch(`/api/prospects/${id}/contacts`, withJson("POST", contact)).then(parse);
 
 export const fetchSettings = () => fetch("/api/settings").then(parse);
 
