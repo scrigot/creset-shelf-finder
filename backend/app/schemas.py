@@ -1,11 +1,17 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 STAGE_VALUES = Literal[
     "Not contacted", "Reached out", "Meeting", "Sampling", "Stocked", "Lost"
 ]
+
+EmailStatus = Literal["verified", "listed_publicly", "guessed", "none"]
+Confidence = Literal["high", "medium", "low"]
+
+EMAIL_STATUSES: tuple[str, ...] = ("verified", "listed_publicly", "guessed", "none")
+CONFIDENCES: tuple[str, ...] = ("high", "medium", "low")
 
 
 class ActivityOut(BaseModel):
@@ -17,6 +23,25 @@ class ActivityOut(BaseModel):
     created_at: datetime
 
 
+class ContactOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    prospect_id: int
+    name: str
+    role: Optional[str] = None
+    email: Optional[str] = None
+    email_status: str
+    phone: Optional[str] = None
+    instagram: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    source_url: Optional[str] = None
+    confidence: str
+    reasoning: Optional[str] = None
+    is_primary: bool
+    found_at: datetime
+
+
 class ProspectOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -24,6 +49,8 @@ class ProspectOut(BaseModel):
     name: str
     type: str
     address: str
+    website: Optional[str] = None
+    instagram: Optional[str] = None
     distance_miles: float
     members: int
     pct_18_34: float
@@ -38,10 +65,12 @@ class ProspectOut(BaseModel):
     notes: str
     lat: float
     lng: float
+    primary_contact: Optional[ContactOut] = None
 
 
 class ProspectDetail(ProspectOut):
     activities: list[ActivityOut] = []
+    contacts: list[ContactOut] = []
 
 
 class ProspectUpdate(BaseModel):
@@ -63,9 +92,11 @@ class FollowUpIn(BaseModel):
 
 
 class DraftOut(BaseModel):
+    to: str = ""
     subject: str
     body: str
     source: str
+    contact_id: Optional[int] = None
 
 
 class SettingsOut(BaseModel):
@@ -90,3 +121,23 @@ class SettingsUpdate(BaseModel):
     adoption_pct: float | None = Field(default=None, ge=0, le=100)
     bottles_per_week: float | None = Field(default=None, ge=0, le=100)
     margin_per_bottle: float | None = Field(default=None, ge=0, le=100)
+
+
+class ContactIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    role: Optional[str] = Field(default=None, max_length=200)
+    email: Optional[str] = Field(default=None, max_length=320)
+    email_status: EmailStatus = "none"
+    phone: Optional[str] = Field(default=None, max_length=60)
+    instagram: Optional[str] = Field(default=None, max_length=200)
+    linkedin_url: Optional[str] = Field(default=None, max_length=400)
+    source_url: Optional[str] = Field(default=None, max_length=600)
+    confidence: Confidence = "low"
+    reasoning: Optional[str] = None
+    is_primary: bool = True
+
+
+class FindContactResponse(BaseModel):
+    candidates: list[ContactIn]
+    searched_at: datetime
+    model: Optional[str] = None

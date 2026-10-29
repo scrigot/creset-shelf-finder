@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ContactsPanel from "./ContactsPanel";
 import ScoreBar from "./ScoreBar";
 import StagePill from "./StagePill";
 import {
@@ -93,6 +94,15 @@ export default function ProspectDetail({ prospectId, weights, settings, onClose,
     });
 
   const saveNotes = () => run("notes", () => patchProspect(prospectId, { notes }));
+
+  const refreshDetail = async () => {
+    try {
+      setDetail(await fetchProspect(prospectId));
+      onChanged();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   const copyDraft = () => {
     if (!draft) return;
@@ -223,6 +233,18 @@ export default function ProspectDetail({ prospectId, weights, settings, onClose,
 
                   <div className="block">
                     <div className="block-head">
+                      <span className="block-title">Contact</span>
+                    </div>
+                    <ContactsPanel
+                      prospectId={prospectId}
+                      contacts={detail.contacts || []}
+                      onSaved={refreshDetail}
+                      compact
+                    />
+                  </div>
+
+                  <div className="block">
+                    <div className="block-head">
                       <span className="block-title">Outreach</span>
                       <button type="button" className="btn" onClick={makeDraft} disabled={busy === "draft"}>
                         {busy === "draft" ? "Drafting…" : "Draft outreach"}
@@ -230,6 +252,9 @@ export default function ProspectDetail({ prospectId, weights, settings, onClose,
                     </div>
                     {draft ? (
                       <div className="draft">
+                        <div className="draft-to">
+                          To: {draft.to || "no email on file for the primary contact"}
+                        </div>
                         <div className="draft-subject">{draft.subject}</div>
                         <pre>{draft.body}</pre>
                         <div className="btn-row">

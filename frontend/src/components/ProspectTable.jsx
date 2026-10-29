@@ -20,6 +20,7 @@ export default function ProspectTable({ rows, onSelect }) {
           <tr>
             <th className="col-rank">#</th>
             <th>Prospect</th>
+            <th className="col-contact">Contact</th>
             <th className="col-score">Score</th>
             <th className="col-value">$/yr</th>
             <th className="col-stage">Stage</th>
@@ -45,6 +46,22 @@ export default function ProspectTable({ rows, onSelect }) {
                     {TYPE_LABEL[row.type] ?? row.type} · {row.distance_miles} mi ·{" "}
                     {row.members.toLocaleString()} members
                   </span>
+                </td>
+                <td className="col-contact">
+                  {row.primary_contact ? (
+                    <span className="contact-inline">
+                      {(row.primary_contact.email_status === "verified" ||
+                        row.primary_contact.email_status === "listed_publicly") && (
+                        <span
+                          className="contact-dot"
+                          title="Email verified or listed publicly"
+                        />
+                      )}
+                      <span className="contact-inline-name">{row.primary_contact.name}</span>
+                    </span>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
                 </td>
                 <td className="col-score">
                   <span className="score-value">{Math.round(row.score)}</span>

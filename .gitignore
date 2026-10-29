@@ -2,5 +2,12 @@ node_modules/
 dist/
 __pycache__/
 *.pyc
+.pytest_cache/
+*.db
 .env
+.env.local
 .DS_Store
+
+# Committed placeholders for local/sandbox boot; real values arrive from the
+# platform-managed env file.
+!.env.base44-defaults

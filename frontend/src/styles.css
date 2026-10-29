@@ -554,17 +554,47 @@ textarea {
   padding: 22px 24px 40px;
 }
 
-.map-svg {
-  display: block;
-  width: 100%;
-  height: auto;
+.map-canvas {
+  position: relative;
+  z-index: 0;
+  height: 560px;
   border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--surface);
+  overflow: hidden;
 }
 
-.map-pin {
-  cursor: pointer;
+.map-canvas .leaflet-container {
+  height: 100%;
+  width: 100%;
+  font: inherit;
+  background: var(--surface);
+}
+
+.map-campus-label {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.map-campus-label::before {
+  display: none;
+}
+
+.map-canvas .leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--dim);
+}
+
+.map-canvas .leaflet-control-attribution a {
+  color: var(--muted);
 }
 
 .map-caption {
@@ -1047,6 +1077,10 @@ textarea {
 
   .map-wrap {
     padding: 14px 12px;
+  }
+
+  .map-canvas {
+    height: 380px;
   }
 
   .followups {

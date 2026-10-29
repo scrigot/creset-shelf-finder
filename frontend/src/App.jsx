@@ -6,6 +6,7 @@ import MapView from "./components/MapView";
 import FollowUpsView from "./components/FollowUpsView";
 import ProspectDetail from "./components/ProspectDetail";
 import WeightsPanel from "./components/WeightsPanel";
+import OutreachWorkspace from "./components/OutreachWorkspace";
 
 export default function App() {
   const [prospects, setProspects] = useState([]);
@@ -90,6 +91,8 @@ export default function App() {
     [rows],
   );
 
+  const withContact = rows.filter((row) => row.primary_contact).length;
+
   const pipelineValue = rows.reduce((sum, row) => sum + row.value, 0);
   const averageScore = rows.length
     ? rows.reduce((sum, row) => sum + row.score, 0) / rows.length
@@ -129,6 +132,16 @@ export default function App() {
             }}
           >
             Follow-ups <span className={`badge ${followUps.length ? "badge-alert" : ""}`}>{followUps.length}</span>
+          </button>
+          <button
+            type="button"
+            className={view === "outreach" ? "active" : ""}
+            onClick={() => {
+              setView("outreach");
+              setPanelOpen(false);
+            }}
+          >
+            Find & outreach <span className="badge">{withContact}</span>
           </button>
         </nav>
 
@@ -198,6 +211,14 @@ export default function App() {
           ))}
 
         {view === "followups" && <FollowUpsView rows={followUps} onSelect={setDetailId} />}
+
+        {view === "outreach" && (
+          <OutreachWorkspace
+            rows={filtered}
+            onSelect={setDetailId}
+            onChanged={refresh}
+          />
+        )}
       </main>
 
       {detailId && settings && (
