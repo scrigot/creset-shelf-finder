@@ -4,10 +4,7 @@ import { fetchProspect } from "../api";
 import { TYPE_LABEL, formatMoney } from "../scoring";
 import ContactsPanel from "./ContactsPanel";
 import OutreachDraft from "./OutreachDraft";
-
-function isReachable(contact) {
-  return Boolean(contact) && (contact.email_status === "verified" || contact.email_status === "listed_publicly");
-}
+import { isReachable } from "../people";
 
 /**
  * Pick a prospect, find the person who decides what it stocks, and write the
@@ -51,14 +48,6 @@ export default function OutreachWorkspace({ rows, onSelect, onChanged }) {
 
   return (
     <section className="outreach">
-      <div className="view-head">
-        <h1>Find &amp; outreach</h1>
-        <p className="muted">
-          Pick a prospect, find the owner or general manager who decides what goes on the
-          shelf, then write the email without leaving the page.
-        </p>
-      </div>
-
       {rows.length === 0 && <p className="empty">No prospects match that filter.</p>}
 
       {rows.length > 0 && (
@@ -137,7 +126,7 @@ export default function OutreachWorkspace({ rows, onSelect, onChanged }) {
                   <div className="block-head">
                     <span className="block-title">Outreach email</span>
                   </div>
-                  <OutreachDraft prospectId={selected.id} version={version} />
+                  <OutreachDraft prospectId={selected.id} onSent={refresh} />
                 </div>
               </>
             )}

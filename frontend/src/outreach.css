@@ -22,8 +22,8 @@
 .outreach-grid {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
-  gap: 20px;
-  padding: 16px 24px 0;
+  gap: 12px;
+  padding: 12px 20px 0;
   align-items: start;
 }
 
@@ -373,5 +373,324 @@
 
   .col-contact {
     display: none;
+  }
+}
+
+/* ---------- contact actions + forms ---------- */
+
+.btn.sm {
+  padding: 6px 12px;
+  font-size: 10px;
+}
+
+.btn.xs {
+  padding: 3px 9px;
+  font-size: 9.5px;
+}
+
+a.btn {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.btn.ghost.xs,
+.btn.ghost.sm {
+  color: var(--ink);
+}
+
+.link-btn {
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-btn.danger:hover {
+  color: var(--accent);
+}
+
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.touch-meta {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.touch-replied {
+  font-weight: 600;
+}
+
+.contact-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.contact-form input,
+.contact-form select {
+  padding: 7px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.contact-form .btn-row {
+  grid-column: 1 / -1;
+}
+
+.inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.inline-field input {
+  width: 46px;
+  padding: 5px 6px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+}
+
+.inline-field select {
+  padding: 4px 6px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 11px;
+}
+
+/* ---------- kanban ---------- */
+
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(180px, 1fr));
+  gap: 8px;
+  padding: 12px 20px 20px;
+  overflow-x: auto;
+  align-items: start;
+}
+
+.kanban-4 {
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  padding: 0;
+}
+
+.kanban-col {
+  min-height: 200px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel-2);
+}
+
+.kanban-col.is-over {
+  border-color: var(--ink);
+  background: #ececec;
+}
+
+.kanban-head {
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px;
+}
+
+.kcard {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-left: 2px solid transparent;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+  cursor: grab;
+}
+
+.kcard:hover {
+  border-color: var(--line-strong);
+}
+
+.kcard.is-overdue {
+  border-left-color: var(--accent);
+}
+
+.kcard-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.kcard-top b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kcard-sub,
+.kcard-foot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kcard-foot {
+  justify-content: space-between;
+}
+
+.kcard-actions {
+  margin-top: 5px;
+}
+
+/* ---------- people ---------- */
+
+.people {
+  padding: 12px 20px 20px;
+}
+
+.people .table-wrap {
+  margin: 0;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.chip-btn {
+  padding: 5px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chip-btn b {
+  margin-left: 4px;
+  color: var(--ink);
+}
+
+.chip-btn.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.chip-btn.active b {
+  color: #ffffff;
+}
+
+.chip.xs {
+  margin-left: 6px;
+  padding: 1px 5px;
+  font-size: 9px;
+}
+
+.email-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.dot-ok {
+  background: #1f8a4c;
+}
+
+.dot-warn {
+  background: #c98a00;
+}
+
+.row-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.col-touch {
+  white-space: nowrap;
+}
+
+.people-table td:nth-child(2) span:first-child {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-contacts a,
+.candidate-meta a {
+  color: var(--ink);
+}
+
+.kanban-head span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 920px) {
+  .col-touch {
+    display: none;
+  }
+
+  .kanban,
+  .people {
+    padding: 12px;
   }
 }

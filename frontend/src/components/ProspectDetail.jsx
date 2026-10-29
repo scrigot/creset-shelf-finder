@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ContactsPanel from "./ContactsPanel";
+import OutreachDraft from "./OutreachDraft";
 import ScoreBar from "./ScoreBar";
 import StagePill from "./StagePill";
 import {
@@ -13,7 +14,6 @@ import {
   todayISO,
 } from "../scoring";
 import {
-  draftOutreach,
   fetchProspect,
   logFollowUp,
   patchProspect,
@@ -23,7 +23,6 @@ const STAGES = ["Not contacted", "Reached out", "Meeting", "Sampling", "Stocked"
 
 export default function ProspectDetail({ prospectId, weights, settings, onClose, onChanged }) {
   const [detail, setDetail] = useState(null);
-  const [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notes, setNotes] = useState("");
@@ -32,7 +31,6 @@ export default function ProspectDetail({ prospectId, weights, settings, onClose,
   useEffect(() => {
     let alive = true;
     setDetail(null);
-    setDraft(null);
     setError("");
     fetchProspect(prospectId)
       .then((data) => {
@@ -86,13 +84,6 @@ export default function ProspectDetail({ prospectId, weights, settings, onClose,
     if (result) setFollow((current) => ({ ...current, next_action: "", note: "" }));
   };
 
-  const makeDraft = () =>
-    run("draft", async () => {
-      const generated = await draftOutreach(prospectId);
-      setDraft(generated);
-      return fetchProspect(prospectId);
-    });
-
   const saveNotes = () => run("notes", () => patchProspect(prospectId, { notes }));
 
   const refreshDetail = async () => {
@@ -102,15 +93,6 @@ export default function ProspectDetail({ prospectId, weights, settings, onClose,
     } catch (err) {
       setError(err.message);
     }
-  };
-
-  const copyDraft = () => {
-    if (!draft) return;
-    navigator.clipboard
-      ?.writeText(`${draft.subject}\n\n${draft.body}`)
-      .then(() => setBusy("copied"))
-      .catch(() => {})
-      .finally(() => setTimeout(() => setBusy(""), 1200));
   };
 
   return (
@@ -245,33 +227,9 @@ export default function ProspectDetail({ prospectId, weights, settings, onClose,
 
                   <div className="block">
                     <div className="block-head">
-                      <span className="block-title">Outreach</span>
-                      <button type="button" className="btn" onClick={makeDraft} disabled={busy === "draft"}>
-                        {busy === "draft" ? "Drafting…" : "Draft outreach"}
-                      </button>
+                      <span className="block-title">Outreach email</span>
                     </div>
-                    {draft ? (
-                      <div className="draft">
-                        <div className="draft-to">
-                          To: {draft.to || "no email on file for the primary contact"}
-                        </div>
-                        <div className="draft-subject">{draft.subject}</div>
-                        <pre>{draft.body}</pre>
-                        <div className="btn-row">
-                          <button type="button" className="btn ghost" onClick={copyDraft}>
-                            {busy === "copied" ? "Copied" : "Copy email"}
-                          </button>
-                          <span className="draft-source">
-                            {draft.source === "ai" ? "Written by AI" : "Template draft · add an AI key for model copy"}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="muted">
-                        Writes a short email referencing this {TYPE_LABEL[detail.type] ?? detail.type}{" "}
-                        and its {detail.members.toLocaleString()} members.
-                      </p>
-                    )}
+                    <OutreachDraft prospectId={prospectId} onSent={refreshDetail} />
                   </div>
 
                   <div className="block">

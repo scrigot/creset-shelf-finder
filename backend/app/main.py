@@ -8,14 +8,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from .db import Base, SessionLocal, engine, wait_for_db
-from .models import Activity, Prospect, Settings
+from .models import Activity, Contact, Prospect, Settings
 from .outreach import draft_outreach
 from .routers import contacts
-from .routers.contacts import primary_contact, sorted_contacts
+from .routers.contacts import contact_out, primary_contact, sorted_contacts
 from .schemas import (
     ActivityCreate,
     ActivityOut,
-    ContactOut,
     DraftOut,
     FollowUpIn,
     ProspectDetail,
@@ -56,13 +55,27 @@ def get_prospect(session, prospect_id: int) -> Prospect:
         .where(Prospect.id == prospect_id)
         .options(
             selectinload(Prospect.activities),
-            selectinload(Prospect.contacts),
+            selectinload(Prospect.contacts).selectinload(Contact.touches),
+            selectinload(Prospect.touches),
         )
         .execution_options(populate_existing=True)
     ).first()
     if prospect is None:
         raise HTTPException(status_code=404, detail="Prospect not found")
     return prospect
+
+
+def with_contact_stats(model, prospect: Prospect):
+    item = model.model_validate(prospect)
+    primary = primary_contact(prospect)
+    item.primary_contact = contact_out(primary) if primary else None
+    item.contact_count = len(prospect.contacts)
+    if prospect.touches:
+        item.last_touch_at = prospect.touches[0].created_at
+        item.last_touch_kind = prospect.touches[0].kind
+    if isinstance(item, ProspectDetail):
+        item.contacts = [contact_out(contact) for contact in sorted_contacts(prospect)]
+    return item
 
 
 @app.get("/api/health")
@@ -78,26 +91,18 @@ def list_prospects():
         rows = session.scalars(
             select(Prospect)
             .order_by(Prospect.name)
-            .options(selectinload(Prospect.contacts))
+            .options(
+                selectinload(Prospect.contacts).selectinload(Contact.touches),
+                selectinload(Prospect.touches),
+            )
         ).all()
-        out = []
-        for prospect in rows:
-            item = ProspectOut.model_validate(prospect)
-            primary = primary_contact(prospect)
-            item.primary_contact = ContactOut.model_validate(primary) if primary else None
-            out.append(item)
-        return out
+        return [with_contact_stats(ProspectOut, prospect) for prospect in rows]
 
 
 @app.get("/api/prospects/{prospect_id}", response_model=ProspectDetail)
 def get_prospect_detail(prospect_id: int):
     with SessionLocal() as session:
-        prospect = get_prospect(session, prospect_id)
-        detail = ProspectDetail.model_validate(prospect)
-        detail.contacts = [
-            ContactOut.model_validate(contact) for contact in sorted_contacts(prospect)
-        ]
-        return detail
+        return with_contact_stats(ProspectDetail, get_prospect(session, prospect_id))
 
 
 @app.patch("/api/prospects/{prospect_id}", response_model=ProspectDetail)
@@ -117,7 +122,7 @@ def update_prospect(prospect_id: int, payload: ProspectUpdate):
             setattr(prospect, field, value)
         session.commit()
         session.expire_all()
-        return get_prospect(session, prospect_id)
+        return with_contact_stats(ProspectDetail, get_prospect(session, prospect_id))
 
 
 @app.post("/api/prospects/{prospect_id}/activities", response_model=ActivityOut, status_code=201)
@@ -151,7 +156,7 @@ def log_follow_up(prospect_id: int, payload: FollowUpIn):
         )
         session.commit()
         session.expire_all()
-        return get_prospect(session, prospect_id)
+        return with_contact_stats(ProspectDetail, get_prospect(session, prospect_id))
 
 
 @app.post("/api/prospects/{prospect_id}/draft-outreach", response_model=DraftOut)

@@ -8,7 +8,7 @@ TYPE_LABEL = {
     "boutique": "boutique studio",
     "big-box": "big-box gym",
     "run club": "run club",
-    "campus rec": "campus rec centre",
+    "campus rec": "campus rec center",
     "yoga/spin": "yoga and spin studio",
 }
 
@@ -44,8 +44,7 @@ def _role_line(prospect, contact) -> str:
 
 def _template(prospect, contact) -> tuple[str, str]:
     label = TYPE_LABEL.get(prospect.type, prospect.type)
-    members = prospect.members
-    subject = f"{BRAND} + {prospect.name}: creatine water for your {members} members"
+    subject = f"{BRAND} + {prospect.name}: creatine water for your members"
     intro_line = f" — {prospect.warm_intro}" if prospect.warm_intro else ""
     body = (
         f"{_greeting(prospect, contact)}\n\n"
@@ -53,12 +52,12 @@ def _template(prospect, contact) -> tuple[str, str]:
         f"I'm with {BRAND}, a creatine water built for people who train hard and want "
         f"hydration that pulls double duty. One bottle carries a full 5g dose, with no "
         f"shaker, no powder, no aftertaste.\n\n"
-        f"I noticed {prospect.name} runs as a {label} with about {members} members, "
+        f"{prospect.name} is a {label}, "
         f"which is close to the profile we do best with: high-frequency training, "
         f"members who already buy supplements, and a front desk that sees them daily."
         f"{intro_line}\n\n"
         f"Would a short sample drop be useful? I can bring a case for the fridge or "
-        f"front desk so your {members} members can try it before you decide anything. "
+        f"front desk so your members can try it before you decide anything. "
         f"Fifteen minutes, at a time that suits your class schedule.\n\n"
         f"Worth a look?\n\n"
         f"— {BRAND} team\n"
@@ -80,8 +79,8 @@ def _llm(api_key: str, prospect, contact) -> tuple[str, str]:
     prompt = (
         f"Write a short, plain-spoken outreach email (max 130 words) from {BRAND}, a "
         f"creatine water brand, to {prospect.name}, a {label} in {prospect.address} "
-        f"with about {prospect.members} members, {prospect.distance_miles} miles from "
-        f"UNC Chapel Hill. Mention its gym type and member count naturally. {person}"
+        f"{prospect.distance_miles} miles from UNC Chapel Hill. Mention its gym type "
+        f"naturally; do not state a member count. {person}"
         f"If a warm intro is given, use it: {prospect.warm_intro or 'none'}. End with a low-"
         f"pressure ask for a sample drop. No hype, no emoji. Return JSON with keys "
         f"'subject' and 'body'."
