@@ -187,3 +187,14 @@ class ContactUpdate(BaseModel):
     instagram: Optional[str] = Field(default=None, max_length=200)
     linkedin_url: Optional[str] = Field(default=None, max_length=400)
     is_primary: Optional[bool] = None
+
+
+class OpenAIKeyStatus(BaseModel):
+    configured: bool
+    source: Optional[Literal["saved", "env"]] = None
+    hint: Optional[str] = None
+    editable: bool
+
+
+class OpenAIKeyIn(BaseModel):
+    key: str = Field(default="", max_length=400)

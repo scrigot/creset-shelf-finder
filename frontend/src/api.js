@@ -55,3 +55,8 @@ export const deleteContact = (id) =>
 
 export const logTouch = (prospectId, touch) =>
   fetch(`/api/prospects/${prospectId}/touches`, withJson("POST", touch)).then(parse);
+
+export const fetchOpenAIKey = () => fetch("/api/openai-key").then(parse);
+
+export const saveOpenAIKey = (key) =>
+  fetch("/api/openai-key", withJson("PUT", { key })).then(parse);

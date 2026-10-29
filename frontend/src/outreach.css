@@ -694,3 +694,30 @@ a.btn {
     padding: 12px;
   }
 }
+
+.key-state {
+  color: var(--dim);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.key-state.is-set {
+  color: #146c3c;
+}
+
+.key-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.key-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+}

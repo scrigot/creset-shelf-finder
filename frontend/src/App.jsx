@@ -6,6 +6,7 @@ import MapView from "./components/MapView";
 import FollowUpsView from "./components/FollowUpsView";
 import ProspectDetail from "./components/ProspectDetail";
 import WeightsPanel from "./components/WeightsPanel";
+import OpenAIKeyPanel from "./components/OpenAIKeyPanel";
 import OutreachWorkspace from "./components/OutreachWorkspace";
 import CompaniesKanban from "./components/CompaniesKanban";
 import PeopleView from "./components/PeopleView";
@@ -167,6 +168,8 @@ export default function App() {
         </nav>
 
         {settings && <WeightsPanel settings={settings} onChange={changeSettings} />}
+
+        <OpenAIKeyPanel />
 
         <p className="sidebar-foot">Weights normalise to 100%. Scores and value recompute live.</p>
       </aside>

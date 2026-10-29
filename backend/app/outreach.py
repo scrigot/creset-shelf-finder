@@ -2,6 +2,8 @@ import json
 import os
 import urllib.request
 
+from .services import llm
+
 TYPE_LABEL = {
     "strength": "strength gym",
     "crossfit": "CrossFit box",
@@ -109,7 +111,7 @@ def _llm(api_key: str, prospect, contact) -> tuple[str, str]:
 
 def draft_outreach(prospect, contact=None) -> tuple[str, str, str]:
     """Return (subject, body, source). Falls back to a written template without a key."""
-    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    api_key = llm.api_key()
     if api_key:
         try:
             subject, body = _llm(api_key, prospect, contact)
