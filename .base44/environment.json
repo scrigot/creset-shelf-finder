@@ -1,0 +1,12 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "OPENAI_API_KEY",
+      "description": "OpenAI API key used by Find contact (Responses API with the web_search tool). Get one at https://platform.openai.com/api-keys. Without it the rest of the app works and Find contact explains that a key is needed.",
+      "requiredAtBoot": false
+    }
+  ]
+}
