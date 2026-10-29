@@ -1,105 +1,102 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { TYPE_LABEL, scoreShade } from "../scoring";
 
-const WIDTH = 860;
-const HEIGHT = 560;
-const PAD = 46;
-const CAMPUS = { lat: 35.9132, lng: -79.0558 };
+const CAMPUS = [35.9132, -79.0558];
+const hasLocation = (row) => Number.isFinite(row.lat) && Number.isFinite(row.lng)
+  && Math.abs(row.lat) <= 90 && Math.abs(row.lng) <= 180;
 
 export default function MapView({ rows, onSelect, selectedId }) {
-  const [hovered, setHovered] = useState(null);
+  const container = useRef(null);
+  const map = useRef(null);
+  const pins = useRef(null);
+  const select = useRef(onSelect);
+  const boundsKey = useRef(null);
+  const [tileError, setTileError] = useState(false);
+  select.current = onSelect;
 
-  const lats = [...rows.map((row) => row.lat), CAMPUS.lat];
-  const lngs = [...rows.map((row) => row.lng), CAMPUS.lng];
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const spanLat = maxLat - minLat || 1;
-  const spanLng = maxLng - minLng || 1;
+  useEffect(() => {
+    const instance = L.map(container.current).setView(CAMPUS, 12);
+    map.current = instance;
+    boundsKey.current = null;
+    const tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(instance);
+    tiles.on("tileerror", () => setTileError(true));
+    tiles.on("tileload", () => setTileError(false));
+    pins.current = L.layerGroup().addTo(instance);
+    const label = document.createElement("span");
+    label.textContent = "UNC Chapel Hill · campus reference";
+    L.circleMarker(CAMPUS, { radius: 6, color: "#1a1a1a", fillColor: "#fff", fillOpacity: 1 })
+      .bindTooltip(label).addTo(instance);
+    L.control.scale({ imperial: true, metric: false }).addTo(instance);
+    const observer = new ResizeObserver(() => instance.invalidateSize());
+    observer.observe(container.current);
+    return () => {
+      observer.disconnect();
+      instance.remove();
+      map.current = null;
+    };
+  }, []);
 
-  const x = (lng) => PAD + ((lng - minLng) / spanLng) * (WIDTH - PAD * 2);
-  const y = (lat) => HEIGHT - PAD - ((lat - minLat) / spanLat) * (HEIGHT - PAD * 2);
+  useEffect(() => {
+    const located = rows.filter(hasLocation);
+    pins.current.clearLayers();
+    located.forEach((row) => {
+      const label = `${row.name} · fit ${Math.round(row.score)}/100 · ${TYPE_LABEL[row.type] ?? row.type}`;
+      const tooltip = document.createElement("span");
+      tooltip.textContent = label;
+      const marker = L.marker([row.lat, row.lng], {
+        title: label, alt: label,
+        zIndexOffset: row.id === selectedId ? 1000 : 0,
+        icon: L.divIcon({
+          className: `gym-marker ${row.id === selectedId ? "selected" : ""}`,
+          html: `<span class="gym-marker-shape" style="background:${scoreShade(row.score)}"><span>${Math.round(row.score)}</span></span>`,
+          iconSize: [36, 46], iconAnchor: [18, 44], tooltipAnchor: [0, -42],
+        }),
+      }).bindTooltip(tooltip).on("click", () => select.current(row.id)).addTo(pins.current);
+      marker.getElement()?.setAttribute("aria-label", label);
+      marker.on("keydown", ({ originalEvent }) => {
+        if (originalEvent.key === "Enter" || originalEvent.key === " ") {
+          L.DomEvent.stop(originalEvent);
+          select.current(row.id);
+        }
+      });
+    });
+    // Updating weights should preserve the user's zoom and pan.
+    const key = JSON.stringify(located.map(({ id, lat, lng }) => [id, lat, lng]).sort((a, b) => a[0] - b[0]));
+    if (boundsKey.current !== key) {
+      boundsKey.current = key;
+      map.current.fitBounds(L.latLngBounds([CAMPUS, ...located.map((row) => [row.lat, row.lng])]), {
+        padding: [48, 48], maxZoom: 14,
+      });
+    }
+  }, [rows, selectedId]);
 
-  const active = rows.find((row) => row.id === (hovered ?? selectedId));
+  const fitAll = () => map.current.fitBounds(
+    L.latLngBounds([CAMPUS, ...rows.filter(hasLocation).map((row) => [row.lat, row.lng])]),
+    { padding: [48, 48], maxZoom: 14 },
+  );
+  const missing = rows.filter((row) => !hasLocation(row));
 
   return (
     <div className="map-wrap">
-      <svg
-        className="map-svg"
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        role="img"
-        aria-label="Map of prospects coloured by score"
-      >
-        <defs>
-          <pattern id="grid" width="62" height="62" patternUnits="userSpaceOnUse">
-            <path d="M 62 0 L 0 0 0 62" fill="none" stroke="#ededed" strokeWidth="1" />
-          </pattern>
-        </defs>
-        <rect width={WIDTH} height={HEIGHT} fill="url(#grid)" />
-
-        {[0.25, 0.5, 0.75].map((ratio) => (
-          <line
-            key={ratio}
-            x1={PAD}
-            x2={WIDTH - PAD}
-            y1={PAD + ratio * (HEIGHT - PAD * 2)}
-            y2={PAD + ratio * (HEIGHT - PAD * 2)}
-            stroke="#e3e3e3"
-            strokeDasharray="3 6"
-          />
-        ))}
-
-        {/* UNC campus reference */}
-        <g>
-          <circle cx={x(CAMPUS.lng)} cy={y(CAMPUS.lat)} r="5" fill="none" stroke="#1a1a1a" strokeWidth="1.5" />
-          <circle cx={x(CAMPUS.lng)} cy={y(CAMPUS.lat)} r="12" fill="none" stroke="#d2d2d2" strokeWidth="1" />
-          <text x={x(CAMPUS.lng) + 17} y={y(CAMPUS.lat) + 4} fill="#6b6b6b" fontSize="10" letterSpacing="2">
-            UNC
-          </text>
-        </g>
-
-        {rows.map((row) => {
-          const isSelected = row.id === selectedId;
-          return (
-            <g
-              key={row.id}
-              className="map-pin"
-              onMouseEnter={() => setHovered(row.id)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={() => onSelect(row.id)}
-            >
-              <circle
-                cx={x(row.lng)}
-                cy={y(row.lat)}
-                r={isSelected ? 8 : 6}
-                fill={scoreShade(row.score)}
-                stroke={isSelected ? "#1a1a1a" : "#ffffff"}
-                strokeWidth={isSelected ? 2 : 1}
-              />
-              <circle cx={x(row.lng)} cy={y(row.lat)} r="15" fill="transparent" />
-              <title>{`${row.name} · ${Math.round(row.score)} · ${TYPE_LABEL[row.type] ?? row.type}`}</title>
-            </g>
-          );
-        })}
-      </svg>
-
-      <div className="map-caption">
-        {active ? (
-          <span>
-            <b>{active.name}</b> · {TYPE_LABEL[active.type] ?? active.type} ·{" "}
-            {active.members.toLocaleString()} members · score {Math.round(active.score)}
-          </span>
-        ) : (
-          <span>Click a marker to open the prospect. Points sit by real distance from campus.</span>
-        )}
+      <div className="map-toolbar">
+        <span><b>{rows.length - missing.length}</b> gym locations · select a pin to explore fit</span>
+        <button type="button" className="btn ghost" onClick={fitAll}>Show all locations</button>
       </div>
-
+      <div ref={container} className="street-map" role="region" aria-label="Gym prospect street map" />
+      {tileError && <p className="map-caption" role="status">Street tiles could not load. Check your connection; gym pins and details are still available.</p>}
+      {rows.length === 0 && <p className="map-caption" role="status">No gyms match your search. Clear the search to see all locations.</p>}
+      {missing.length > 0 && <div className="map-caption">Missing map coordinates: {missing.map((row) => (
+        <button className="btn ghost" type="button" key={row.id} onClick={() => onSelect(row.id)}>{row.name}</button>
+      ))}</div>}
+      <p className="map-caption">Drag to explore, use + / − to zoom, or press Enter on a focused pin for the gym’s score, strengths, concerns and notes. Pins use saved prospect coordinates.</p>
       <div className="map-legend">
-        <span>Low score</span>
-        <span className="legend-bar" />
-        <span>High score</span>
-        <span className="legend-note">{rows.length} prospects</span>
+        <span>Lower fit</span><span className="legend-bar" /><span>Higher fit</span>
+        <span className="legend-note">Pin number = fit score / 100</span>
       </div>
     </div>
   );

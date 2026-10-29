@@ -4,6 +4,7 @@ import StagePill from "./StagePill";
 import {
   TYPE_LABEL,
   breakdown,
+  fitReasons,
   formatDate,
   formatMoney,
   formatMoneyFull,
@@ -136,6 +137,30 @@ export default function ProspectDetail({ prospectId, weights, settings, onClose,
                     <span className="hero-value num">{formatMoneyFull(value)}/yr</span>
                   </div>
                   <ScoreBar parts={scored.parts} tall />
+
+                  <div className="block fit-assessment">
+                    <div className="block-head"><span className="block-title">Why this gym could fit</span></div>
+                    <p className="muted">Based on saved prospect data and your current weights. These are model signals, not a confirmed buying decision.</p>
+                    {[
+                      { title: "Strengths", test: (part) => part.weight > 0 && part.raw >= 70, empty: "No active scoring factors reach 70/100 with the recorded data." },
+                      { title: "Concerns & tradeoffs", test: (part) => part.weight > 0 && part.raw < 70, empty: "All active factors score at least 70/100. Confirm interest and operational requirements with the gym." },
+                      { title: "Not weighted in this score", test: (part) => part.weight === 0, empty: null },
+                    ].map(({ title, test, empty }) => {
+                      const reasons = fitReasons(detail, weights).filter(test);
+                      if (!reasons.length && !empty) return null;
+                      return <div className="fit-reasons" key={title}>
+                        <h3>{title}</h3>
+                        {reasons.length ? <ul>{reasons.map((part) => <li key={part.key}>
+                          <b>{part.label} · {part.raw.toFixed(0)}/100</b>
+                          <span>{part.evidence}</span>
+                          <small>{Math.round(part.share * 100)}% weight · {part.points.toFixed(1)} points toward total</small>
+                        </li>)}</ul> : <p className="muted">{empty}</p>}
+                      </div>;
+                    })}
+                    <p className="formula">Strengths score at least 70/100; concerns score below 70. All recorded factors appear above, including any you have weighted at zero.</p>
+                    {detail.notes && <p className="fit-context"><b>Recorded context:</b> {detail.notes}</p>}
+                    {detail.stage === "Lost" && <p className="fit-context"><b>Pipeline concern:</b> This gym is marked Lost. Review the notes before reaching out again.</p>}
+                  </div>
 
                   <div className="block">
                     <div className="block-head">

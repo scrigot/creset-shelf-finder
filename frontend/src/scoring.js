@@ -67,6 +67,17 @@ export function opportunityValue(prospect, settings) {
   );
 }
 
+export function fitReasons(prospect, weights) {
+  const evidence = {
+    fit: `${TYPE_LABEL[prospect.type] ?? prospect.type} gym type; model fit ${TYPE_FIT[prospect.type] ?? 50}/100.`,
+    size: `${prospect.members.toLocaleString()} members; reach is scored on a logarithmic scale capped at 3,000 members.`,
+    demo: `${prospect.pct_18_34}% ages 18–34, ${prospect.pct_women}% women, ${prospect.athlete_focus} athlete focus. Demographics combines these at 40%, 20% and 40%.`,
+    location: `${prospect.distance_miles} miles from campus; the model subtracts 7.5 points per mile from 100.`,
+    ease: `${prospect.has_drink_fridge ? "Drink fridge available (+35)" : "No drink fridge recorded (+0)"}; ${prospect.sells_supplements ? "sells supplements (+25)" : "no supplement sales recorded (+0)"}; ${prospect.warm_intro ? `warm introduction (+40): ${prospect.warm_intro}` : "no warm introduction recorded (+0)"}.`,
+  };
+  return breakdown(prospect, weights).parts.map((part) => ({ ...part, evidence: evidence[part.key] }));
+}
+
 export function formatMoney(value) {
   if (value >= 10000) return `$${(value / 1000).toFixed(1)}k`;
   if (value >= 1000) return `$${(value / 1000).toFixed(2)}k`;
