@@ -8,15 +8,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from .db import Base, SessionLocal, engine, wait_for_db
-from .models import Activity, Contact, Prospect, Settings
+from .models import Activity, Contact, Prospect, Secret, Settings
 from .outreach import draft_outreach
 from .routers import contacts
+from .services import llm
 from .routers.contacts import contact_out, primary_contact, sorted_contacts
 from .schemas import (
     ActivityCreate,
     ActivityOut,
     DraftOut,
     FollowUpIn,
+    OpenAIKeyIn,
+    OpenAIKeyStatus,
     ProspectDetail,
     ProspectOut,
     ProspectUpdate,
@@ -197,6 +200,41 @@ def update_settings(payload: SettingsUpdate):
         session.commit()
         session.refresh(settings)
         return settings
+
+
+def key_status() -> OpenAIKeyStatus:
+    saved = llm.saved_key()
+    key = saved or (os.environ.get("OPENAI_API_KEY") or "").strip()
+    return OpenAIKeyStatus(
+        configured=bool(key),
+        source=("saved" if saved else "env") if key else None,
+        hint=f"…{key[-4:]}" if key else None,
+        editable=llm.key_editable(),
+    )
+
+
+@app.get("/api/openai-key", response_model=OpenAIKeyStatus)
+def read_openai_key():
+    return key_status()
+
+
+@app.put("/api/openai-key", response_model=OpenAIKeyStatus)
+def save_openai_key(payload: OpenAIKeyIn):
+    """Save (or, with an empty key, clear) the key. Never echoes it back."""
+    if not llm.key_editable():
+        raise HTTPException(status_code=403, detail="Set OPENAI_API_KEY on the server for deployed builds.")
+    key = payload.key.strip()
+    with SessionLocal() as session:
+        secret = session.get(Secret, llm.KEY_NAME)
+        if key:
+            if secret:
+                secret.value = key
+            else:
+                session.add(Secret(name=llm.KEY_NAME, value=key))
+        elif secret:
+            session.delete(secret)
+        session.commit()
+    return key_status()
 
 
 # The production image (./Dockerfile) sets STATIC_DIR to the built Vite bundle so

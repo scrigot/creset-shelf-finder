@@ -32,8 +32,29 @@ class LLMResult:
     citations: list[str] = field(default_factory=list)
 
 
+KEY_NAME = "openai_api_key"
+
+
+def key_editable() -> bool:
+    """The key can be saved from the app only outside the production image
+    (which sets STATIC_DIR), because the app has no login."""
+    return not os.environ.get("STATIC_DIR")
+
+
+def saved_key() -> str:
+    if not key_editable():
+        return ""
+    from ..db import SessionLocal
+    from ..models import Secret
+
+    with SessionLocal() as session:
+        secret = session.get(Secret, KEY_NAME)
+        return secret.value.strip() if secret else ""
+
+
 def api_key() -> str:
-    return (os.environ.get("OPENAI_API_KEY") or "").strip()
+    """A key saved from the app wins over OPENAI_API_KEY."""
+    return saved_key() or (os.environ.get("OPENAI_API_KEY") or "").strip()
 
 
 def model_name() -> str:
@@ -71,7 +92,7 @@ def responses_json(*, system: str, user: str, schema: dict, schema_name: str) ->
     if not key:
         raise LLMNotConfigured(
             "No LLM API key is configured, so the web search cannot run. "
-            "Add an OPENAI_API_KEY to enable Find contact."
+            "Add an OpenAI key in the sidebar (or set OPENAI_API_KEY) to enable Find contact."
         )
 
     payload = build_payload(system=system, user=user, schema=schema, schema_name=schema_name)

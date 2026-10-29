@@ -141,3 +141,12 @@ class Settings(Base):
     adoption_pct: Mapped[float] = mapped_column(Float, default=8)
     bottles_per_week: Mapped[float] = mapped_column(Float, default=3)
     margin_per_bottle: Mapped[float] = mapped_column(Float, default=1.2)
+
+
+class Secret(Base):
+    """A credential saved from the app. Only used when running locally."""
+
+    __tablename__ = "secrets"
+
+    name: Mapped[str] = mapped_column(String(60), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
