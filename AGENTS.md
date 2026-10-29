@@ -1,6 +1,6 @@
 # Notes for working in this repo
 
-Crest Shelf Finder is a prospect scoring + outreach tracker for a creatine water brand selling into gyms near UNC Chapel Hill.
+Creset Shelf Finder is a prospect scoring + outreach tracker for a creatine water brand selling into gyms near UNC Chapel Hill.
 
 ## Running it
 
@@ -11,6 +11,10 @@ docker compose -f docker-compose.base44.yml up -d --build
 - `web` (Vite dev server) is the only public entry: host port 3000, proxying `/api` to `http://api:8000`. The app is same-origin — there is no CORS config and none is needed.
 - `api` (FastAPI, uvicorn `--reload`) is also published on host port 8000; `/docs` is the OpenAPI UI.
 - `db` is Postgres 16 with generated dev credentials inline in the compose file (local infra, not secrets).
+
+## Brand
+
+The UI follows Creset's own identity (`drinkcreset.com`): off-white field `#f4f4f4`, near-black ink `#1a1a1a`, a single red accent `#e31d2b` reserved for overdue/late states, bold uppercase labels and pill controls. The wordmark is the brand's own black-on-transparent PNG, self-hosted at `frontend/public/creset-logo.png` (also the favicon). Brand colours live as CSS variables at the top of `frontend/src/styles.css`; the map's SVG strokes are hardcoded in `MapView.jsx`, and `scoreShade()` in `scoring.js` ramps light→dark for a light background, so all three need touching together if the palette changes again.
 
 ## Things that bite
 

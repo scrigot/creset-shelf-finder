@@ -104,7 +104,7 @@ export default function App() {
     <div className="shell">
       <aside className={`sidebar ${panelOpen ? "open" : ""}`}>
         <div className="brand">
-          <div className="brand-name">Crest</div>
+          <img className="brand-mark" src="/creset-logo.png" alt="Creset" />
           <div className="brand-sub">Shelf Finder</div>
           <div className="brand-tag">creatine water · UNC Chapel Hill</div>
         </div>

@@ -12,7 +12,7 @@ TYPE_LABEL = {
     "yoga/spin": "yoga and spin studio",
 }
 
-BRAND = "Crest"
+BRAND = "Creset"
 
 
 def _template(prospect) -> tuple[str, str]:

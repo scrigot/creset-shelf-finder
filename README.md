@@ -1,6 +1,6 @@
-# Crest Shelf Finder
+# Creset Shelf Finder
 
-Prospect scoring and outreach tracker for Crest, a creatine water brand selling into gyms, studios and fitness partners around UNC Chapel Hill.
+Prospect scoring and outreach tracker for Creset, a creatine water brand selling into gyms, studios and fitness partners around UNC Chapel Hill.
 
 ## Stack
 

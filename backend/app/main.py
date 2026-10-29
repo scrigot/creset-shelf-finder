@@ -29,7 +29,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Crest Shelf Finder API", lifespan=lifespan)
+app = FastAPI(title="Creset Shelf Finder API", lifespan=lifespan)
 
 
 def get_settings(session) -> Settings:

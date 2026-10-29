@@ -33,7 +33,7 @@ export default function MapView({ rows, onSelect, selectedId }) {
       >
         <defs>
           <pattern id="grid" width="62" height="62" patternUnits="userSpaceOnUse">
-            <path d="M 62 0 L 0 0 0 62" fill="none" stroke="#161616" strokeWidth="1" />
+            <path d="M 62 0 L 0 0 0 62" fill="none" stroke="#ededed" strokeWidth="1" />
           </pattern>
         </defs>
         <rect width={WIDTH} height={HEIGHT} fill="url(#grid)" />
@@ -45,16 +45,16 @@ export default function MapView({ rows, onSelect, selectedId }) {
             x2={WIDTH - PAD}
             y1={PAD + ratio * (HEIGHT - PAD * 2)}
             y2={PAD + ratio * (HEIGHT - PAD * 2)}
-            stroke="#1d1d1d"
+            stroke="#e3e3e3"
             strokeDasharray="3 6"
           />
         ))}
 
         {/* UNC campus reference */}
         <g>
-          <circle cx={x(CAMPUS.lng)} cy={y(CAMPUS.lat)} r="5" fill="none" stroke="#ffffff" strokeWidth="1.5" />
-          <circle cx={x(CAMPUS.lng)} cy={y(CAMPUS.lat)} r="12" fill="none" stroke="#333333" strokeWidth="1" />
-          <text x={x(CAMPUS.lng) + 17} y={y(CAMPUS.lat) + 4} fill="#8f8f8f" fontSize="10" letterSpacing="2">
+          <circle cx={x(CAMPUS.lng)} cy={y(CAMPUS.lat)} r="5" fill="none" stroke="#1a1a1a" strokeWidth="1.5" />
+          <circle cx={x(CAMPUS.lng)} cy={y(CAMPUS.lat)} r="12" fill="none" stroke="#d2d2d2" strokeWidth="1" />
+          <text x={x(CAMPUS.lng) + 17} y={y(CAMPUS.lat) + 4} fill="#6b6b6b" fontSize="10" letterSpacing="2">
             UNC
           </text>
         </g>
@@ -74,7 +74,7 @@ export default function MapView({ rows, onSelect, selectedId }) {
                 cy={y(row.lat)}
                 r={isSelected ? 8 : 6}
                 fill={scoreShade(row.score)}
-                stroke={isSelected ? "#ffffff" : "#000000"}
+                stroke={isSelected ? "#1a1a1a" : "#ffffff"}
                 strokeWidth={isSelected ? 2 : 1}
               />
               <circle cx={x(row.lng)} cy={y(row.lat)} r="15" fill="transparent" />

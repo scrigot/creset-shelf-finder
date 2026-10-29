@@ -103,6 +103,6 @@ export function isOverdue(prospect) {
 }
 
 export function scoreShade(score) {
-  const level = Math.round(26 + (score / 100) * 229);
+  const level = Math.round(214 - (score / 100) * 188);
   return `rgb(${level}, ${level}, ${level})`;
 }
