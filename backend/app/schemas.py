@@ -9,6 +9,7 @@ STAGE_VALUES = Literal[
 
 EmailStatus = Literal["verified", "listed_publicly", "guessed", "none"]
 Confidence = Literal["high", "medium", "low"]
+TouchKind = Literal["sent", "reply", "call", "note"]
 
 EMAIL_STATUSES: tuple[str, ...] = ("verified", "listed_publicly", "guessed", "none")
 CONFIDENCES: tuple[str, ...] = ("high", "medium", "low")
@@ -40,6 +41,36 @@ class ContactOut(BaseModel):
     reasoning: Optional[str] = None
     is_primary: bool
     found_at: datetime
+    touch_count: int = 0
+    last_touch_at: Optional[datetime] = None
+    last_touch_kind: Optional[str] = None
+
+
+class PersonOut(ContactOut):
+    """A contact with enough of its gym to list everyone in one table."""
+
+    prospect_name: str
+    prospect_type: str
+    prospect_stage: str
+
+
+class TouchOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    prospect_id: int
+    contact_id: Optional[int] = None
+    kind: str
+    body: str
+    created_at: datetime
+
+
+class TouchIn(BaseModel):
+    kind: TouchKind
+    contact_id: Optional[int] = None
+    body: str = ""
+    # For "sent": schedule the follow-up this many days out.
+    follow_up_days: int = Field(default=4, ge=0, le=60)
 
 
 class ProspectOut(BaseModel):
@@ -66,11 +97,15 @@ class ProspectOut(BaseModel):
     lat: float
     lng: float
     primary_contact: Optional[ContactOut] = None
+    contact_count: int = 0
+    last_touch_at: Optional[datetime] = None
+    last_touch_kind: Optional[str] = None
 
 
 class ProspectDetail(ProspectOut):
     activities: list[ActivityOut] = []
     contacts: list[ContactOut] = []
+    touches: list[TouchOut] = []
 
 
 class ProspectUpdate(BaseModel):
@@ -141,3 +176,14 @@ class FindContactResponse(BaseModel):
     candidates: list[ContactIn]
     searched_at: datetime
     model: Optional[str] = None
+
+
+class ContactUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    role: Optional[str] = Field(default=None, max_length=200)
+    email: Optional[str] = Field(default=None, max_length=320)
+    email_status: Optional[EmailStatus] = None
+    phone: Optional[str] = Field(default=None, max_length=60)
+    instagram: Optional[str] = Field(default=None, max_length=200)
+    linkedin_url: Optional[str] = Field(default=None, max_length=400)
+    is_primary: Optional[bool] = None

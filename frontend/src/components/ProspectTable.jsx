@@ -7,6 +7,7 @@ import {
   formatMoney,
   isOverdue,
 } from "../scoring";
+import { TOUCH_LABEL, ago, isReachable } from "../people";
 
 export default function ProspectTable({ rows, onSelect }) {
   if (rows.length === 0) {
@@ -21,6 +22,7 @@ export default function ProspectTable({ rows, onSelect }) {
             <th className="col-rank">#</th>
             <th>Prospect</th>
             <th className="col-contact">Contact</th>
+            <th className="col-touch">Last touch</th>
             <th className="col-score">Score</th>
             <th className="col-value">$/yr</th>
             <th className="col-stage">Stage</th>
@@ -45,19 +47,29 @@ export default function ProspectTable({ rows, onSelect }) {
                   <span className="prospect-meta">
                     {TYPE_LABEL[row.type] ?? row.type} · {row.distance_miles} mi ·{" "}
                     {row.members.toLocaleString()} members
+                    {row.address && ` · ${row.address.split(",").slice(-2, -1)[0]?.trim() ?? ""}`}
                   </span>
                 </td>
                 <td className="col-contact">
                   {row.primary_contact ? (
                     <span className="contact-inline">
-                      {(row.primary_contact.email_status === "verified" ||
-                        row.primary_contact.email_status === "listed_publicly") && (
+                      {isReachable(row.primary_contact) && (
                         <span
                           className="contact-dot"
                           title="Email verified or listed publicly"
                         />
                       )}
                       <span className="contact-inline-name">{row.primary_contact.name}</span>
+                      {row.contact_count > 1 && <span className="muted">+{row.contact_count - 1}</span>}
+                    </span>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </td>
+                <td className="col-touch">
+                  {row.last_touch_at ? (
+                    <span className={row.last_touch_kind === "reply" ? "touch-replied" : ""}>
+                      {TOUCH_LABEL[row.last_touch_kind]} {ago(row.last_touch_at)}
                     </span>
                   ) : (
                     <span className="muted">—</span>

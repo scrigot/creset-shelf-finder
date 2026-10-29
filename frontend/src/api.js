@@ -42,3 +42,16 @@ export const fetchSettings = () => fetch("/api/settings").then(parse);
 
 export const saveSettings = (patch) =>
   fetch("/api/settings", withJson("PUT", patch)).then(parse);
+
+export const fetchContacts = () => fetch("/api/contacts").then(parse);
+
+export const patchContact = (id, patch) =>
+  fetch(`/api/contacts/${id}`, withJson("PATCH", patch)).then(parse);
+
+export const deleteContact = (id) =>
+  fetch(`/api/contacts/${id}`, { method: "DELETE" }).then((response) => {
+    if (!response.ok) throw new Error(`Delete failed (${response.status})`);
+  });
+
+export const logTouch = (prospectId, touch) =>
+  fetch(`/api/prospects/${prospectId}/touches`, withJson("POST", touch)).then(parse);

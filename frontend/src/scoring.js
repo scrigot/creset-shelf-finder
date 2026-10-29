@@ -68,6 +68,7 @@ export function opportunityValue(prospect, settings) {
 }
 
 export function formatMoney(value) {
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
   if (value >= 10000) return `$${(value / 1000).toFixed(1)}k`;
   if (value >= 1000) return `$${(value / 1000).toFixed(2)}k`;
   return `$${Math.round(value)}`;

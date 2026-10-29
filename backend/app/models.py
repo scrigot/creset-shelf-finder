@@ -55,6 +55,12 @@ class Prospect(Base):
         back_populates="prospect", cascade="all, delete-orphan"
     )
 
+    touches: Mapped[list["Touch"]] = relationship(
+        back_populates="prospect",
+        cascade="all, delete-orphan",
+        order_by="Touch.created_at.desc()",
+    )
+
 
 class Contact(Base):
     """A person found through the contact search, or saved by hand."""
@@ -81,6 +87,34 @@ class Contact(Base):
     )
 
     prospect: Mapped["Prospect"] = relationship(back_populates="contacts")
+    touches: Mapped[list["Touch"]] = relationship(
+        back_populates="contact", order_by="Touch.created_at.desc()"
+    )
+
+
+TOUCH_KINDS = ("sent", "reply", "call", "note")
+
+
+class Touch(Base):
+    """One logged interaction with a gym, usually with a specific contact."""
+
+    __tablename__ = "touches"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    prospect_id: Mapped[int] = mapped_column(
+        ForeignKey("prospects.id", ondelete="CASCADE"), index=True
+    )
+    contact_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(16))
+    body: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+
+    prospect: Mapped["Prospect"] = relationship(back_populates="touches")
+    contact: Mapped[Optional["Contact"]] = relationship(back_populates="touches")
 
 
 class Activity(Base):

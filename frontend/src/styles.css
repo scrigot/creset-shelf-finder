@@ -53,7 +53,7 @@ textarea {
 
 .shell {
   display: grid;
-  grid-template-columns: 264px minmax(0, 1fr);
+  grid-template-columns: 224px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -64,7 +64,7 @@ textarea {
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  padding: 28px 22px 32px;
+  padding: 18px 16px 20px;
   border-right: 1px solid var(--line);
   background: var(--surface);
 }
@@ -94,7 +94,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin: 26px 0 0;
+  margin: 16px 0 0;
 }
 
 .nav button {
@@ -102,7 +102,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 9px 14px;
+  padding: 7px 12px;
   border: 0;
   border-radius: var(--r-pill);
   background: transparent;
@@ -147,8 +147,8 @@ textarea {
 }
 
 .panel-section {
-  margin-top: 26px;
-  padding-top: 22px;
+  margin-top: 16px;
+  padding-top: 14px;
   border-top: 1px solid var(--line);
 }
 
@@ -171,7 +171,7 @@ textarea {
 }
 
 .slider-row {
-  margin-bottom: 15px;
+  margin-bottom: 8px;
 }
 
 .slider-head {
@@ -257,7 +257,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 16px 24px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--line);
   background: rgba(244, 244, 244, 0.92);
   backdrop-filter: blur(10px);
@@ -321,8 +321,10 @@ textarea {
 
 .summary {
   display: flex;
-  gap: 44px;
-  padding: 22px 24px;
+  gap: 28px;
+  padding: 12px 20px;
+  flex-wrap: wrap;
+  row-gap: 10px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
 }
@@ -330,11 +332,11 @@ textarea {
 .stat {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
 }
 
 .stat b {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;
@@ -368,7 +370,7 @@ textarea {
 }
 
 .prospect-table th {
-  padding: 12px 16px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--line-2);
   color: var(--dim);
   font-size: 10px;
@@ -380,7 +382,7 @@ textarea {
 }
 
 .prospect-table td {
-  padding: 14px 16px;
+  padding: 7px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
@@ -723,10 +725,10 @@ textarea {
 }
 
 .drawer {
-  width: min(540px, 100%);
+  width: min(600px, 100%);
   height: 100%;
   overflow-y: auto;
-  padding: 26px 26px 56px;
+  padding: 18px 20px 40px;
   background: var(--surface);
   box-shadow: -18px 0 48px rgba(26, 26, 26, 0.12);
 }
@@ -809,8 +811,8 @@ textarea {
 }
 
 .block {
-  margin-top: 26px;
-  padding-top: 22px;
+  margin-top: 16px;
+  padding-top: 14px;
   border-top: 1px solid var(--line);
 }
 

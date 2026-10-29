@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 
-import { draftOutreach } from "../api";
+import { draftOutreach, logTouch } from "../api";
+import { mailto } from "../people";
 
 /**
  * The editable outreach email. Nothing is generated until asked, because a draft
  * is logged on the prospect and (with a key) costs a model call.
  */
-export default function OutreachDraft({ prospectId }) {
+export default function OutreachDraft({ prospectId, onSent }) {
   const [draft, setDraft] = useState(null);
+  const [followDays, setFollowDays] = useState(4);
+  const [sent, setSent] = useState(false);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -17,6 +20,7 @@ export default function OutreachDraft({ prospectId }) {
     setStatus("idle");
     setError("");
     setCopied(false);
+    setSent(false);
   }, [prospectId]);
 
   const generate = async () => {
@@ -29,6 +33,22 @@ export default function OutreachDraft({ prospectId }) {
     } catch (err) {
       setError(err.message);
       setStatus("error");
+    }
+  };
+
+  const markSent = async () => {
+    setError("");
+    try {
+      await logTouch(prospectId, {
+        kind: "sent",
+        contact_id: draft.contact_id,
+        body: draft.subject,
+        follow_up_days: Number(followDays),
+      });
+      setSent(true);
+      if (onSent) await onSent();
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -54,9 +74,30 @@ export default function OutreachDraft({ prospectId }) {
           {status === "loading" ? "Drafting…" : draft ? "Draft again" : "Draft outreach"}
         </button>
         {draft && (
-          <button type="button" className="btn ghost" onClick={copy}>
-            {copied ? "Copied" : "Copy email"}
-          </button>
+          <>
+            <a className="btn ghost" href={mailto(draft.to, draft.subject, draft.body)}>
+              Open in mail
+            </a>
+            <button type="button" className="btn ghost" onClick={copy}>
+              {copied ? "Copied" : "Copy"}
+            </button>
+            <span className="spacer" />
+            <label className="inline-field">
+              Follow up in
+              <input
+                type="number"
+                min="0"
+                max="60"
+                value={followDays}
+                onChange={(event) => setFollowDays(event.target.value)}
+                aria-label="Follow-up days"
+              />
+              d
+            </label>
+            <button type="button" className="btn" onClick={markSent} disabled={sent}>
+              {sent ? "Logged as sent" : "Mark sent"}
+            </button>
+          </>
         )}
       </div>
 
@@ -91,7 +132,7 @@ export default function OutreachDraft({ prospectId }) {
           <label className="field">
             <span>Body</span>
             <textarea
-              rows={12}
+              rows={10}
               value={draft.body}
               onChange={(event) => update("body", event.target.value)}
             />
