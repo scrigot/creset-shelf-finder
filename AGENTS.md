@@ -13,6 +13,12 @@ docker compose -f docker-compose.base44.yml up -d --build
 - `db` is Postgres 16 with generated dev credentials inline in the compose file (local infra, not secrets).
 - Demo data is seeded only when `prospects` is empty (`SEED_DEMO_DATA=0` disables it; the test suite sets that).
 
+## Deploying
+
+- Production is the repo-root `Dockerfile`: stage 1 builds `frontend/dist`, stage 2 serves that bundle from FastAPI alongside `/api`, so a deployment is same-origin like the dev proxy and `frontend/src/api.js` needs no changes.
+- `STATIC_DIR` is the only switch. The image sets it; the sandbox never does, so the static mount does not exist in development and Vite keeps serving the UI there. A deployment therefore adds no route the dev stack has to satisfy.
+- `docker-compose.prod.yml` (separate project name, host port `8080`) is a single-host flavour of the same image; managed hosts only need the image plus a Postgres `DATABASE_URL`. No provider config is committed.
+
 ## Brand
 
 The UI follows Creset's own identity (`drinkcreset.com`): off-white field `#f4f4f4`, near-black ink `#1a1a1a`, a single red accent `#e31d2b` reserved for overdue/late states, bold uppercase labels and pill controls. The wordmark is the brand's own black-on-transparent PNG, self-hosted at `frontend/public/creset-logo.png` (also the favicon). Brand colours live as CSS variables at the top of `frontend/src/styles.css`; the contact/outreach surfaces add their rules in `frontend/src/outreach.css` (imported after `styles.css` in `main.jsx`) and reuse those variables — keep new UI on the same tokens instead of inventing a palette. The map is a real Leaflet map (`frontend/src/components/MapView.jsx`, `leaflet` is a runtime dependency) on public OpenStreetMap raster tiles — no API key, so keep the OSM/CARTO-style providers that demand a key out of the tile URL. Pin colour comes from `scoreShade()` in `scoring.js`, which ramps light→dark for a light background.

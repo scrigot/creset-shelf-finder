@@ -1,6 +1,9 @@
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -189,3 +192,11 @@ def update_settings(payload: SettingsUpdate):
         session.commit()
         session.refresh(settings)
         return settings
+
+
+# The production image (./Dockerfile) sets STATIC_DIR to the built Vite bundle so
+# the UI and the API share one origin. Development leaves it unset and Vite serves
+# the frontend, so this mount only exists in a deployment.
+_static_dir = os.environ.get("STATIC_DIR")
+if _static_dir and Path(_static_dir).is_dir():
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="web")

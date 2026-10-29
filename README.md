@@ -49,6 +49,23 @@ docker compose -f docker-compose.base44.yml up -d --build
 
 UI: http://localhost:3000 · API: http://localhost:8000
 
+## Deploying
+
+`Dockerfile` builds one production image: the Vite bundle from `npm run build`, served by the same FastAPI process that owns `/api`, so the deployed app stays same-origin. `STATIC_DIR` is the only switch — the image sets it, development leaves it unset and Vite serves the UI.
+
+```bash
+docker build -t crest-shelf-finder .
+docker run -p 8000:8000 -e DATABASE_URL=postgresql+psycopg://user:pass@host:5432/crest crest-shelf-finder
+```
+
+The container needs a Postgres reachable through `DATABASE_URL`; tables are created on first boot and the demo prospects seeded unless `SEED_DEMO_DATA=0`. For a single host, `docker-compose.prod.yml` runs the same image beside its own Postgres:
+
+```bash
+POSTGRES_PASSWORD=change-me APP_PORT=8080 docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Nothing here is tied to one provider: Render, Railway, Fly and a plain VPS all run this image plus a managed Postgres URL. No platform-specific config is committed yet.
+
 ### Environment
 
 | Variable | Purpose |
