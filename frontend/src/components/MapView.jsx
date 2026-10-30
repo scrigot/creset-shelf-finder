@@ -21,7 +21,14 @@ export default function MapView({ rows, onSelect, selectedId }) {
     const container = containerRef.current;
     if (!container) return;
 
-    const map = L.map(container, { center: CAMPUS, zoom: 12, scrollWheelZoom: false });
+    // Trackpad pinch arrives as ctrl+wheel, so wheel zoom must be on for it to work.
+    const map = L.map(container, {
+      center: CAMPUS,
+      zoom: 12,
+      scrollWheelZoom: true,
+      wheelPxPerZoomLevel: 90,
+      zoomSnap: 0.25,
+    });
     L.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 19 }).addTo(map);
 
     const markers = L.layerGroup().addTo(map);
